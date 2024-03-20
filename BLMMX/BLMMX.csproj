@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <LangVersion>10.0</LangVersion>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <MB_SERVER_PATH>D:\Programs\Steam\steamapps\common\Mount &amp; Blade II Dedicated Server</MB_SERVER_PATH>
+    <AssemblyName>BLMMX</AssemblyName>
+    <Platforms>x64</Platforms>
+
+  </PropertyGroup>
+
+  <ItemGroup>
+
+    <Reference Include="$(MB_SERVER_PATH)\bin\Win64_Shipping_Server\TaleWorlds.*.dll">
+      <HintPath>%(Identity)</HintPath>
+      <Private>false</Private>
+    </Reference>
+
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Mode\" />
+    <Folder Include="Mode\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+
+  </ItemGroup>
+</Project>
