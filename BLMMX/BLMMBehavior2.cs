@@ -24,25 +24,27 @@ internal class BLMMBehavior2 : MultiplayerTeamSelectComponent
     {
         base.OnBehaviorInitialize();
 
-        try
-        {
-            string result = HttpHelper.DownloadStringTaskAsync(WebUrlManager.GetMatchList).Result;
-            if (result != null)
-            {
-                dataContainer = JsonConvert.DeserializeObject<PlayerMatchDataContainer>(value: result);
-                Debug.Print($"[OnBehaviorInitialize|同步网页端匹配列表成功]{result}");
-            }
-            else
-            {
-                Debug.Print($"[OnBehaviorInitialize|同步网页端匹配列表成功]{result}");
-            }
-        }
-        catch (Exception ex)
-        {
-            Debug.Print(ex.Message);
-            Debug.Print("[OnBehaviorInitialize|同步失败]");
-            throw;
-        }
+        ///本模块为BLMM专用,BTL不需要
+        ///
+        //try
+        //{
+        //    string result = HttpHelper.DownloadStringTaskAsync(WebUrlManager.GetMatchList).Result;
+        //    if (result != null)
+        //    {
+        //        dataContainer = JsonConvert.DeserializeObject<PlayerMatchDataContainer>(value: result);
+        //        Debug.Print($"[OnBehaviorInitialize|同步网页端匹配列表成功]{result}");
+        //    }
+        //    else
+        //    {
+        //        Debug.Print($"[OnBehaviorInitialize|同步网页端匹配列表成功]{result}");
+        //    }
+        //}
+        //catch (Exception ex)
+        //{
+        //    Debug.Print(ex.Message);
+        //    Debug.Print("[OnBehaviorInitialize|同步失败]");
+        //    throw;
+        //}
     }
 
     public override async void OnMissionTick(float dt)
@@ -53,32 +55,33 @@ internal class BLMMBehavior2 : MultiplayerTeamSelectComponent
         {
             //Helper.PrintError("[ES]ddd");
 
-            try
-            {
-                string result = await HttpHelper.DownloadStringTaskAsync(WebUrlManager.GetVerifyCode);
-                Dictionary<string, string> d = new();
-                if (result != null)
-                {
-                    d = JsonConvert.DeserializeObject<Dictionary<string, string>>(value: result);
-                }
+            /// 验证码 用于BLMM注册
+            //try
+            //{
+            //    string result = await HttpHelper.DownloadStringTaskAsync(WebUrlManager.GetVerifyCode);
+            //    Dictionary<string, string> d = new();
+            //    if (result != null)
+            //    {
+            //        d = JsonConvert.DeserializeObject<Dictionary<string, string>>(value: result);
+            //    }
 
-                foreach (NetworkCommunicator? item in GameNetwork.NetworkPeers)
-                {
-                    string PlayerId = item.VirtualPlayer.Id.ToString();
-                    if (d.ContainsKey(PlayerId))
-                    {
-                        Helper.SendMessageToPeer(item, d[PlayerId]);
-                    }
-                }
-            }
-            catch (Exception e)
-            {
-                Helper.PrintError(e.Message);
-                Helper.PrintError(e.StackTrace);
-                return;
-            }
+            //    foreach (NetworkCommunicator? item in GameNetwork.NetworkPeers)
+            //    {
+            //        string PlayerId = item.VirtualPlayer.Id.ToString();
+            //        if (d.ContainsKey(PlayerId))
+            //        {
+            //            Helper.SendMessageToPeer(item, d[PlayerId]);
+            //        }
+            //    }
+            //}
+            //catch (Exception e)
+            //{
+            //    Helper.PrintError(e.Message);
+            //    Helper.PrintError(e.StackTrace);
+            //    return;
+            //}
 
-
+            /// 匹配列表
             //try
             //{
             //    string result = await HttpHelper.DownloadStringTaskAsync(WebUrlManager.GetMatchList);
@@ -243,8 +246,8 @@ internal class BLMMBehavior2 : MultiplayerTeamSelectComponent
             }
         }
 
-        Debug.Print($"[OnAgentHit|{blow.InflictedDamage}]");
-        Debug.Print($"[OnAgentHit|{JsonConvert.SerializeObject(dataContainer)}]");
+        //Debug.Print($"[OnAgentHit|{blow.InflictedDamage}]");
+        //Debug.Print($"[OnAgentHit|{JsonConvert.SerializeObject(dataContainer)}]");
     }
 
     protected override void OnEndMission()
@@ -401,10 +404,12 @@ internal class BLMMBehavior2 : MultiplayerTeamSelectComponent
                 dataContainer.SetAssistNumber(PlayerId, missionPeer.AssistCount);
                 if (multiplayerRoundController.RoundWinner == BattleSideEnum.Attacker)
                 {
+                    dataContainer.AddAttackWinRoundNum();
                     dataContainer.AddWinRound(PlayerId);
                 }
                 else
                 {
+                    dataContainer.AddDefendWinRoundNum();
                     dataContainer.AddLoseRound(PlayerId);
                 }
             }
@@ -417,10 +422,12 @@ internal class BLMMBehavior2 : MultiplayerTeamSelectComponent
 
                 if (multiplayerRoundController.RoundWinner == BattleSideEnum.Defender)
                 {
+                    dataContainer.AddAttackWinRoundNum();
                     dataContainer.AddWinRound(PlayerId);
                 }
                 else
                 {
+                    dataContainer.AddDefendWinRoundNum();
                     dataContainer.AddLoseRound(PlayerId);
                 }
             }
@@ -436,7 +443,7 @@ internal class BLMMBehavior2 : MultiplayerTeamSelectComponent
         if (k == null)
         {
             PlayerMatchDataContainer.TurnMatchToNorm();
-            string result = JsonConvert.SerializeObject(dataContainer, Formatting.Indented);
+            string result = JsonConvert.SerializeObject(dataContainer);
             Debug.Print(result);
             try
             {

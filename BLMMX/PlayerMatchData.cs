@@ -241,14 +241,15 @@ public class PlayerMatchDataContainer
     public void RefreshhAll()
     {
         // 遍历键值对并修改值
-        foreach (KeyValuePair<string, PlayerMatchData> pair in _players)
-        {
-            string key = pair.Key;
-            PlayerMatchData value = pair.Value;
-            // 使用索引器更新字典中的值
-            value.RefreshAll();
-            _players[key] = value;
-        }
+        _players = new();
+        //foreach (KeyValuePair<string, PlayerMatchData> pair in _players)
+        //{
+        //    string key = pair.Key;
+        //    PlayerMatchData value = pair.Value;
+        //    // 使用索引器更新字典中的值
+        //    value.RefreshAll();
+        //    _players[key] = value;
+        //}
 
         AttackRound = 0;
         DefendRound = 0;
@@ -258,22 +259,22 @@ public class PlayerMatchDataContainer
         Tag = "Norm";
     }
 
-    public static void AddAttackWinRoundNum()
+    public  void AddAttackWinRoundNum()
     {
         AttackRound++;
     }
 
-    public static void AddDefendWinRoundNum()
+    public  void AddDefendWinRoundNum()
     {
         DefendRound++;
     }
 
-    public static void AddAttackWinBureauNum()
+    public  void AddAttackWinBureauNum()
     {
         AttackScores++;
     }
 
-    public static void AddDefendWinBureauNum()
+    public void AddDefendWinBureauNum()
     {
         DefendScores++;
     }
