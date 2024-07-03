@@ -89,17 +89,23 @@ internal class BLMMBehavior2 : MultiplayerTeamSelectComponent
             Helper.PrintError(e.StackTrace);
             return;
         }
-        //try
-        //{
-        //    HttpHelper.PostStringAsync(WebUrlManager.UploadMatchData, result);
-        //    Debug.Print("已发送数据至网页端");
-        //}
-        //catch (Exception ex)
-        //{
-        //    Debug.Print(ex.Message, color: Debug.DebugColor.Red);
-        //    Debug.Print(ex.StackTrace, color: Debug.DebugColor.Red);
-        //    return;
-        //}
+    }
+
+    public async void SendPlayerName(NetworkCommunicator networkCommunicator)
+    {
+        string PlayerId = networkCommunicator.VirtualPlayer.Id.ToString();
+        string name = networkCommunicator.UserName;
+
+        try
+        {
+            string result = await HttpHelper.DownloadStringTaskAsync(WebUrlManager.SendPlayerName(PlayerId, name));
+        }
+        catch (Exception e)
+        {
+            Helper.PrintError(e.Message);
+            Helper.PrintError(e.StackTrace);
+            return;
+        }
     }
 
 
@@ -148,10 +154,11 @@ internal class BLMMBehavior2 : MultiplayerTeamSelectComponent
         string playerId = networkPeer.VirtualPlayer.Id.ToString();
         Helper.SendMessageToPeer(networkPeer, playerId);
         Helper.SendMessageToAllPeers($"Welcome {networkPeer.UserName} join server");
+
         dataContainer.AddPlayerWithName(networkPeer);
-        //dataContainer.AddPlayerWithName(playerId, networkPeer.UserName);
         //Debug.Print(JsonConvert.SerializeObject(dataContainer));
-        HttpHelper.DownloadStringTaskAsync(WebUrlManager.GetVerifyCodeEx(playerId));
+        GetPlayerVerifyCodeAsync(networkPeer);
+        SendPlayerName(networkPeer);
         Debug.Print("[OnPlayerConnectedToServer|PlayerJoined]");
 
         KickWeirdBodyProperties(networkPeer);

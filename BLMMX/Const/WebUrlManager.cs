@@ -20,12 +20,18 @@ namespace BLMMX.Const
 
         public const string UploadMatchData = base_url + _uploadMatchData;
         public const string GetMatchList = base_url + _getMatchList;
+        public const string SendName = base_url + "add_player_name";
 
         private static string GetVerifyCode => base_url + _getVerifyCode;
 
         public static string GetVerifyCodeEx(string playerId)
         {
             return $"{GetVerifyCode}/{playerId}";
+        }
+
+        public static string SendPlayerName(string playerId, string playerName)
+        {
+            return $"{SendName}/{playerId}/{playerName}";
         }
     }
 }

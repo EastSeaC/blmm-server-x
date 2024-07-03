@@ -105,7 +105,7 @@ public class PlayerMatchDataContainer
         string player_id = missionPeer.GetNetworkPeer().VirtualPlayer.Id.ToString();
         string player_name = missionPeer.DisplayedName;
 
-        Helper.Print($" Test {player_id} NameIn AddPlayerWithName {player_name}");
+        Helper.PrintError($"[es]添加 {player_id} NameIn AddPlayerWithName {player_name}");
         AddPlayerWithName(player_id, player_name);
     }
 
@@ -114,7 +114,9 @@ public class PlayerMatchDataContainer
         string player_id = communicator.VirtualPlayer.Id.ToString();
         string player_name = communicator.UserName;
 
-        AddPlayerWithName(player_id, player_name);
+        string last_name = player_name;
+
+        AddPlayerWithName(player_id, last_name);
     }
 
 
