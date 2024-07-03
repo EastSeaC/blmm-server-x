@@ -1,5 +1,6 @@
 ﻿using BLMMX.Const;
 using BLMMX.Helpers;
+using BLMMX.MatchTable;
 using Newtonsoft.Json;
 using TaleWorlds.Core;
 using TaleWorlds.Library;
@@ -13,73 +14,108 @@ namespace BLMMX;
 
 internal class BLMMBehavior2 : MultiplayerTeamSelectComponent
 {
-    private Timer timer;
+    /// <summary>
+    /// 检查时间为1s
+    /// </summary>
+    private static Timer timer;
+    private static Timer timerIn2s;
     private static PlayerMatchDataContainer dataContainer = new();
     public BLMMBehavior2()
     {
         // 设置为0将会使得 只有当玩家进入后，MissionTimer才会启动计时
         timer = new(0f, 1f);
+        timerIn2s = new(0f, 2f);
     }
     public override void OnBehaviorInitialize()
     {
         base.OnBehaviorInitialize();
 
-        ///本模块为BLMM专用,BTL不需要
-        ///
+        //GetMatchPlayerList();
+    }
+
+    /// <summary>
+    /// 本模块为BLMM专用,BTL不需要
+    /// </summary>
+    public void GetMatchPlayerList()
+    {
+        try
+        {
+            string result = HttpHelper.DownloadStringTaskAsync(WebUrlManager.GetMatchList).Result;
+            if (result != null)
+            {
+                dataContainer = JsonConvert.DeserializeObject<PlayerMatchDataContainer>(value: result);
+                Debug.Print($"[OnBehaviorInitialize|同步网页端匹配列表成功]{result}");
+            }
+            else
+            {
+                Debug.Print($"[OnBehaviorInitialize|同步网页端匹配列表成功]{result}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.Print(ex.Message);
+            Debug.Print("[OnBehaviorInitialize|同步失败]");
+            throw;
+        }
+    }
+
+    /// 验证码 用于BLMM注册 <summary>
+    /// 验证码 用于BLMM注册
+    /// </summary>
+    /// <param name="dt"></param>
+    public async void GetPlayerVerifyCodeAsync(NetworkCommunicator networkCommunicator)
+    {
+        string PlayerId = networkCommunicator.VirtualPlayer.Id.ToString();
+        try
+        {
+            string result = await HttpHelper.DownloadStringTaskAsync(WebUrlManager.GetVerifyCodeEx(PlayerId));
+
+            if (result == null) return;
+            PlayerRegInfo playerRegInfo = JsonConvert.DeserializeObject<PlayerRegInfo>(result);
+
+            if (playerRegInfo == null) return;
+            if (playerRegInfo.is_reg)
+            {
+                Helper.SendMessageToPeer(networkCommunicator, "欢迎来到BLMM服务器，你已经注册");
+            }
+            else
+            {
+                Helper.SendMessageToPeer(networkCommunicator, $"欢迎来到BLMM服务器，你的注册码是:{playerRegInfo.verify_code}");
+            }
+        }
+        catch (Exception e)
+        {
+            Helper.PrintError(e.Message);
+            Helper.PrintError(e.StackTrace);
+            return;
+        }
         //try
         //{
-        //    string result = HttpHelper.DownloadStringTaskAsync(WebUrlManager.GetMatchList).Result;
-        //    if (result != null)
-        //    {
-        //        dataContainer = JsonConvert.DeserializeObject<PlayerMatchDataContainer>(value: result);
-        //        Debug.Print($"[OnBehaviorInitialize|同步网页端匹配列表成功]{result}");
-        //    }
-        //    else
-        //    {
-        //        Debug.Print($"[OnBehaviorInitialize|同步网页端匹配列表成功]{result}");
-        //    }
+        //    HttpHelper.PostStringAsync(WebUrlManager.UploadMatchData, result);
+        //    Debug.Print("已发送数据至网页端");
         //}
         //catch (Exception ex)
         //{
-        //    Debug.Print(ex.Message);
-        //    Debug.Print("[OnBehaviorInitialize|同步失败]");
-        //    throw;
+        //    Debug.Print(ex.Message, color: Debug.DebugColor.Red);
+        //    Debug.Print(ex.StackTrace, color: Debug.DebugColor.Red);
+        //    return;
         //}
     }
+
 
     public override async void OnMissionTick(float dt)
     {
         base.OnMissionTick(dt);
 
+
+        if (timerIn2s.Check(Mission.Current.CurrentTime))
+        {
+            Helper.PrintError($"[ES]CurPlayerNum:{GameNetwork.NetworkPeerCount}, Spectator:{Mission.GetMissionBehavior<MissionScoreboardComponent>().Spectators.Count}");
+        }
+
         if (timer.Check(Mission.Current.CurrentTime))
         {
             //Helper.PrintError("[ES]ddd");
-
-            /// 验证码 用于BLMM注册
-            //try
-            //{
-            //    string result = await HttpHelper.DownloadStringTaskAsync(WebUrlManager.GetVerifyCode);
-            //    Dictionary<string, string> d = new();
-            //    if (result != null)
-            //    {
-            //        d = JsonConvert.DeserializeObject<Dictionary<string, string>>(value: result);
-            //    }
-
-            //    foreach (NetworkCommunicator? item in GameNetwork.NetworkPeers)
-            //    {
-            //        string PlayerId = item.VirtualPlayer.Id.ToString();
-            //        if (d.ContainsKey(PlayerId))
-            //        {
-            //            Helper.SendMessageToPeer(item, d[PlayerId]);
-            //        }
-            //    }
-            //}
-            //catch (Exception e)
-            //{
-            //    Helper.PrintError(e.Message);
-            //    Helper.PrintError(e.StackTrace);
-            //    return;
-            //}
 
             /// 匹配列表
             //try
@@ -97,17 +133,7 @@ internal class BLMMBehavior2 : MultiplayerTeamSelectComponent
             //Debug.Print(result);
 
 
-            //try
-            //{
-            //    HttpHelper.PostStringAsync(WebUrlManager.UploadMatchData, result);
-            //    Debug.Print("已发送数据至网页端");
-            //}
-            //catch (Exception ex)
-            //{
-            //    Debug.Print(ex.Message, color: Debug.DebugColor.Red);
-            //    Debug.Print(ex.StackTrace, color: Debug.DebugColor.Red);
-            //    return;
-            //}
+
         }
     }
 
@@ -125,7 +151,7 @@ internal class BLMMBehavior2 : MultiplayerTeamSelectComponent
         dataContainer.AddPlayerWithName(networkPeer);
         //dataContainer.AddPlayerWithName(playerId, networkPeer.UserName);
         //Debug.Print(JsonConvert.SerializeObject(dataContainer));
-
+        HttpHelper.DownloadStringTaskAsync(WebUrlManager.GetVerifyCodeEx(playerId));
         Debug.Print("[OnPlayerConnectedToServer|PlayerJoined]");
 
         KickWeirdBodyProperties(networkPeer);
@@ -148,7 +174,7 @@ internal class BLMMBehavior2 : MultiplayerTeamSelectComponent
             return false;
         }
 
-        Debug.Print($"Kick player {vp.UserName} with a height of {height}");
+        Helper.PrintError($"Kick player {vp.UserName} with a height of {height}");
         KickHelper.Kick(networkPeer, DisconnectType.KickedByHost, "bad_player_height");
         return true;
     }
@@ -161,7 +187,7 @@ internal class BLMMBehavior2 : MultiplayerTeamSelectComponent
             return false;
         }
 
-        Debug.Print($"Kick player with an empty name \"{vp.UserName}\"");
+        Helper.PrintError($"Kick player with an empty name \"{vp.UserName}\"");
         KickHelper.Kick(networkPeer, DisconnectType.KickedByHost, "empty_name");
         return true;
     }
@@ -173,13 +199,13 @@ internal class BLMMBehavior2 : MultiplayerTeamSelectComponent
     {
         base.OnAgentControllerSetToPlayer(agent);
 
-        if (agent.IsPlayerControlled)
-        {
-            dataContainer.AddPlayerWithName(agent.MissionPeer);
-            //string playerId = agent.MissionPeer.GetNetworkPeer().VirtualPlayer.Id.ToString();
-            //dataContainer.AddPlayerWithName(playerId, agent.MissionPeer.Name);
-            Debug.Print("[OnAgentControllerSetToPlayer|Right]");
-        }
+        //if (agent.IsPlayerControlled)
+        //{
+        //    dataContainer.AddPlayerWithName(agent.MissionPeer);
+        //    //string playerId = agent.MissionPeer.GetNetworkPeer().VirtualPlayer.Id.ToString();
+        //    //dataContainer.AddPlayerWithName(playerId, agent.MissionPeer.Name);
+        //    Debug.Print("[OnAgentControllerSetToPlayer|Right]");
+        //}
     }
 
 
@@ -260,12 +286,17 @@ internal class BLMMBehavior2 : MultiplayerTeamSelectComponent
         //}
     }
 
+    /// <summary>
+    /// OnAgentControllerChanged 比 OnAgentControllerSetToPlayer 先执行，那么
+    /// </summary>
+    /// <param name="agent"></param>
+    /// <param name="oldController"></param>
     protected override void OnAgentControllerChanged(Agent agent, Agent.ControllerType oldController)
     {
-        base.OnAgentControllerChanged(agent, oldController);
-
         if (agent.IsPlayerControlled)
         {
+            dataContainer.AddPlayerWithName(agent.MissionPeer);
+
             string PlayerId = agent.MissionPeer.GetPeer().Id.ToString();
 
             if (agent.MountAgent != null)
@@ -357,7 +388,7 @@ internal class BLMMBehavior2 : MultiplayerTeamSelectComponent
 
         if (affectedAgent.IsPlayerControlled)
         {
-            
+
         }
 
         //MissionScoreboardComponent scoreboardComponent = Mission.GetMissionBehavior<MissionScoreboardComponent>();
@@ -457,7 +488,7 @@ internal class BLMMBehavior2 : MultiplayerTeamSelectComponent
                 Debug.Print(ex.StackTrace, color: Debug.DebugColor.Red);
                 return;
             }
-            
+
         }
         else
         {

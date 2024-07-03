@@ -2,29 +2,26 @@
 using TaleWorlds.Library;
 using TaleWorlds.MountAndBlade;
 
-namespace BLMMX
+namespace BLMMX;
+
+public class SubModule : MBSubModuleBase
 {
-    internal class SubModule : MBSubModuleBase
+    protected override void OnSubModuleLoad()
     {
-        protected override void OnSubModuleLoad()
-        {
-            base.OnSubModuleLoad();
+        base.OnSubModuleLoad();
 
-        }
-
-        public override void OnMissionBehaviorInitialize(Mission mission)
-        {
-            base.OnMissionBehaviorInitialize(mission);
-            mission.AddMissionBehavior(new BLMMBehavior2());
-            Debug.Print("[OnMissionBehaviorInitialize|已启动]");
-
-        }
-
-        public override void OnBeforeMissionBehaviorInitialize(Mission mission)
-        {
-            base.OnBeforeMissionBehaviorInitialize(mission);
-        }
     }
 
+    public override void OnMissionBehaviorInitialize(Mission mission)
+    {
+        base.OnMissionBehaviorInitialize(mission);
+        mission.AddMissionBehavior(new BLMMBehavior2());
+        Debug.Print("[OnMissionBehaviorInitialize|已启动]");
 
+    }
+
+    public override void OnBeforeMissionBehaviorInitialize(Mission mission)
+    {
+        base.OnBeforeMissionBehaviorInitialize(mission);
+    }
 }

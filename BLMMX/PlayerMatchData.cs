@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using BLMMX.Helpers;
+using Newtonsoft.Json;
 using TaleWorlds.MountAndBlade;
 
 namespace BLMMX;
@@ -30,11 +31,17 @@ public class PlayerMatchDataContainer
     [JsonProperty]
     private static string Tag = "Norm";
 
+    [JsonProperty]
+    private static string ServerName = "[Unkonw]";
+
     public PlayerMatchDataContainer()
     {
         _players ??= new();
         AttackPlayerIds = new HashSet<string>();
         DefendPlayerIds = new HashSet<string>();
+
+        MultiplayerOptions.Instance.GetOptionFromOptionType(MultiplayerOptions.OptionType.ServerName, MultiplayerOptions.MultiplayerOptionsAccessMode.CurrentMapOptions).GetValue(out string text7);
+        ServerName = text7;
     }
 
     public void SHOW()
@@ -98,6 +105,7 @@ public class PlayerMatchDataContainer
         string player_id = missionPeer.GetNetworkPeer().VirtualPlayer.Id.ToString();
         string player_name = missionPeer.DisplayedName;
 
+        Helper.Print($" Test {player_id} NameIn AddPlayerWithName {player_name}");
         AddPlayerWithName(player_id, player_name);
     }
 
@@ -259,17 +267,17 @@ public class PlayerMatchDataContainer
         Tag = "Norm";
     }
 
-    public  void AddAttackWinRoundNum()
+    public void AddAttackWinRoundNum()
     {
         AttackRound++;
     }
 
-    public  void AddDefendWinRoundNum()
+    public void AddDefendWinRoundNum()
     {
         DefendRound++;
     }
 
-    public  void AddAttackWinBureauNum()
+    public void AddAttackWinBureauNum()
     {
         AttackScores++;
     }
