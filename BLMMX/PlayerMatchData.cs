@@ -1,6 +1,7 @@
 ﻿using BLMMX.Helpers;
 using Newtonsoft.Json;
 using TaleWorlds.MountAndBlade;
+using TaleWorlds.PlayerServices;
 
 namespace BLMMX;
 
@@ -24,9 +25,9 @@ public class PlayerMatchDataContainer
     [JsonProperty]
     private static int DefendRound;
 
-    [JsonProperty] private static HashSet<string> AttackPlayerIds;
+    [JsonProperty] private static List<string> AttackPlayerIds;
 
-    [JsonProperty] private static HashSet<string> DefendPlayerIds;
+    [JsonProperty] private static List<string> DefendPlayerIds;
 
     [JsonProperty]
     private static string Tag = "Norm";
@@ -37,8 +38,8 @@ public class PlayerMatchDataContainer
     public PlayerMatchDataContainer()
     {
         _players ??= new();
-        AttackPlayerIds = new HashSet<string>();
-        DefendPlayerIds = new HashSet<string>();
+        AttackPlayerIds = new List<string>();
+        DefendPlayerIds = new List<string>();
 
         MultiplayerOptions.Instance.GetOptionFromOptionType(MultiplayerOptions.OptionType.ServerName, MultiplayerOptions.MultiplayerOptionsAccessMode.CurrentMapOptions).GetValue(out string text7);
         ServerName = text7;
@@ -366,6 +367,15 @@ public class PlayerMatchDataContainer
     {
 
     }
+
+    public void SetRoundScore(string PlayerId, int v)
+    {
+        PlayerMatchData playerMatchData = _players[PlayerId];
+        playerMatchData.Win1 = v;
+        _players[PlayerId] = playerMatchData;
+    }
+
+    
 }
 public class PlayerMatchData
 {

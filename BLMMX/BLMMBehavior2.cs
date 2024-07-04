@@ -283,6 +283,7 @@ internal class BLMMBehavior2 : MultiplayerTeamSelectComponent
         //Debug.Print($"[OnAgentHit|{JsonConvert.SerializeObject(dataContainer)}]");
     }
 
+
     protected override void OnEndMission()
     {
         base.OnEndMission();
@@ -434,12 +435,16 @@ internal class BLMMBehavior2 : MultiplayerTeamSelectComponent
 
             MissionScoreboardComponent scoreboardComponent = Mission.GetMissionBehavior<MissionScoreboardComponent>();
 
+
             foreach (MissionPeer missionPeer in scoreboardComponent.GetSideSafe(BattleSideEnum.Attacker).Players)
             {
                 string PlayerId = missionPeer.GetNetworkPeer().VirtualPlayer.Id.ToString();
                 dataContainer.SetKillNumber(PlayerId, missionPeer.KillCount);
                 dataContainer.SetDeathNumber(PlayerId, missionPeer.DeathCount);
                 dataContainer.SetAssistNumber(PlayerId, missionPeer.AssistCount);
+                // 添加进攻队伍
+                PlayerMatchDataContainer.AddAttackPlayer(PlayerId);
+                dataContainer.SetRoundScore(PlayerId, scoreboardComponent.GetRoundScore(BattleSideEnum.Attacker));
                 if (multiplayerRoundController.RoundWinner == BattleSideEnum.Attacker)
                 {
                     dataContainer.AddAttackWinRoundNum();
@@ -450,6 +455,8 @@ internal class BLMMBehavior2 : MultiplayerTeamSelectComponent
                     dataContainer.AddDefendWinRoundNum();
                     dataContainer.AddLoseRound(PlayerId);
                 }
+
+
             }
             foreach (MissionPeer missionPeer in scoreboardComponent.GetSideSafe(BattleSideEnum.Defender).Players)
             {
@@ -457,7 +464,9 @@ internal class BLMMBehavior2 : MultiplayerTeamSelectComponent
                 dataContainer.SetKillNumber(PlayerId, missionPeer.KillCount);
                 dataContainer.SetDeathNumber(PlayerId, missionPeer.DeathCount);
                 dataContainer.SetAssistNumber(PlayerId, missionPeer.AssistCount);
-
+                // 添加防御队伍
+                PlayerMatchDataContainer.AddDefendPlayer(PlayerId);
+                dataContainer.SetRoundScore(PlayerId, scoreboardComponent.GetRoundScore(BattleSideEnum.Defender));
                 if (multiplayerRoundController.RoundWinner == BattleSideEnum.Defender)
                 {
                     dataContainer.AddAttackWinRoundNum();
@@ -474,9 +483,12 @@ internal class BLMMBehavior2 : MultiplayerTeamSelectComponent
         {
             Helper.PrintError(e.Message);
             Helper.PrintError(e.StackTrace);
+            return;
         }
 
-
+        ////////////////////////////////////////
+        // 发送数据
+        ////////////////////////////////////////
         MultiplayerWarmupComponent k = Mission.GetMissionBehavior<MultiplayerWarmupComponent>();
         if (k == null)
         {
