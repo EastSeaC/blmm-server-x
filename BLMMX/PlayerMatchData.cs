@@ -30,7 +30,7 @@ public class PlayerMatchDataContainer
     [JsonProperty] private static List<string> DefendPlayerIds;
 
     [JsonProperty]
-    private static string Tag = "Norm";
+    private static object Tag = "Norm";
 
     [JsonProperty]
     private static string ServerName = "[Unkonw]";
@@ -69,6 +69,11 @@ public class PlayerMatchDataContainer
     public static void TurnMatchToNorm()
     {
         Tag = "Norm";
+    }
+
+    public static void SetTag(object tag)
+    {
+        Tag = tag;
     }
 
     public void AddPlayer(string player_id)
@@ -267,6 +272,8 @@ public class PlayerMatchDataContainer
         AttackScores = 0;
         DefendScores = 0;
 
+        AttackPlayerIds.Clear();
+        DefendPlayerIds.Clear();
         Tag = "Norm";
     }
 
@@ -375,7 +382,7 @@ public class PlayerMatchDataContainer
         _players[PlayerId] = playerMatchData;
     }
 
-    
+
 }
 public class PlayerMatchData
 {

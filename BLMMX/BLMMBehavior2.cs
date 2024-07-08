@@ -412,6 +412,7 @@ internal class BLMMBehavior2 : MultiplayerTeamSelectComponent
         //}
     }
 
+    
     public override void OnClearScene()
     {
         base.OnClearScene();
@@ -449,6 +450,7 @@ internal class BLMMBehavior2 : MultiplayerTeamSelectComponent
                 {
                     dataContainer.AddAttackWinRoundNum();
                     dataContainer.AddWinRound(PlayerId);
+                    dataContainer.AddLoseRound(PlayerId);
                 }
                 else
                 {
@@ -478,6 +480,13 @@ internal class BLMMBehavior2 : MultiplayerTeamSelectComponent
                     dataContainer.AddLoseRound(PlayerId);
                 }
             }
+
+            Dictionary<string, object> data = new()
+            {
+                ["IsMatchEnding"] = multiplayerRoundController.IsMatchEnding,
+                ["RoundCount"] = multiplayerRoundController.RoundCount,
+            };
+            PlayerMatchDataContainer.SetTag(data);
         }
         catch (Exception e)
         {
