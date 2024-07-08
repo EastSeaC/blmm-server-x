@@ -450,7 +450,6 @@ internal class BLMMBehavior2 : MultiplayerTeamSelectComponent
                 {
                     dataContainer.AddAttackWinRoundNum();
                     dataContainer.AddWinRound(PlayerId);
-                    dataContainer.AddLoseRound(PlayerId);
                 }
                 else
                 {

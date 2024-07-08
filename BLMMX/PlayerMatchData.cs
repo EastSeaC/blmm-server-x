@@ -302,7 +302,7 @@ public class PlayerMatchDataContainer
         AddPlayer(playerId);
 
         PlayerMatchData k = _players[playerId];
-        k.Infantry++;
+        k.AddInfantryTimes();
         _players[playerId] = k;
     }
 
@@ -311,7 +311,7 @@ public class PlayerMatchDataContainer
         AddPlayer(playerId);
 
         PlayerMatchData k = _players[playerId];
-        k.Cavalry++;
+        k.AddCavarlryTimes();
         _players[playerId] = k;
     }
 
@@ -320,7 +320,7 @@ public class PlayerMatchDataContainer
         AddPlayer(playerId);
 
         PlayerMatchData k = _players[playerId];
-        k.Archer++;
+        k.AddRangerTimes();
         _players[playerId] = k;
     }
 
@@ -518,5 +518,7 @@ public class PlayerMatchData
         Lose++;
     }
 
-
+    public void AddInfantryTimes() { Infantry++; }
+    public void AddCavarlryTimes() { cavalry++; }
+    public void AddRangerTimes() { archer++; }
 }
