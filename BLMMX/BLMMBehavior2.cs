@@ -80,11 +80,12 @@ internal class BLMMBehavior2 : MultiplayerTeamSelectComponent
             }
             else
             {
-                Helper.SendMessageToPeer(networkCommunicator, $"欢迎来到BLMM服务器，你的注册码是:{playerRegInfo.verify_code}");
+                Helper.SendMessageToPeer(networkCommunicator, $"欢迎来到BLMM服务器，你的playerId（steamId)是:{playerRegInfo.player_id},你的注册码是:{playerRegInfo.verify_code}");
             }
         }
         catch (Exception e)
         {
+            Helper.SendMessageToPeer(networkCommunicator, "欢迎来到BLMM服务器，注册码服务器异常，请在群里反馈- Q群:768296790");
             Helper.PrintError(e.Message);
             Helper.PrintError(e.StackTrace);
             return;
@@ -412,7 +413,7 @@ internal class BLMMBehavior2 : MultiplayerTeamSelectComponent
         //}
     }
 
-    
+
     public override void OnClearScene()
     {
         base.OnClearScene();
