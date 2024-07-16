@@ -31,8 +31,15 @@ internal class BLMMBehavior2 : MultiplayerTeamSelectComponent
         base.OnBehaviorInitialize();
 
         //GetMatchPlayerList();
-    }
 
+        MultiplayerRoundController multiplayerRoundController = Mission.GetMissionBehavior<MultiplayerRoundController>();
+        if (multiplayerRoundController == null)
+        {
+            return;
+        }
+
+        multiplayerRoundController.OnPostRoundEnded += SendData;
+    }
     /// <summary>
     /// 本模块为BLMM专用,BTL不需要
     /// </summary>
@@ -48,7 +55,7 @@ internal class BLMMBehavior2 : MultiplayerTeamSelectComponent
             }
             else
             {
-                Debug.Print($"[OnBehaviorInitialize|同步网页端匹配列表成功]{result}");
+                Debug.Print($"[OnBehaviorInitialize|同步网页端匹配列表失败]{result}");
             }
         }
         catch (Exception ex)
@@ -81,6 +88,8 @@ internal class BLMMBehavior2 : MultiplayerTeamSelectComponent
             else
             {
                 Helper.SendMessageToPeer(networkCommunicator, $"欢迎来到BLMM服务器，你的playerId（steamId)是:{playerRegInfo.player_id},你的注册码是:{playerRegInfo.verify_code}");
+                Helper.SendMessageToPeer(networkCommunicator, $"前往KOOK 私聊机器人注册");
+                Helper.SendMessageToPeer(networkCommunicator, $"注册指令: /v {playerRegInfo.player_id.Replace("2.0.0.", "")} {playerRegInfo.verify_code}");
             }
         }
         catch (Exception e)
@@ -147,13 +156,14 @@ internal class BLMMBehavior2 : MultiplayerTeamSelectComponent
     public override void OnPlayerDisconnectedFromServer(NetworkCommunicator networkPeer)
     {
         Helper.SendMessageToAllPeers($"{networkPeer.UserName} leave server");
+
     }
 
 
     public override void OnPlayerConnectedToServer(NetworkCommunicator networkPeer)
     {
         string playerId = networkPeer.VirtualPlayer.Id.ToString();
-        Helper.SendMessageToPeer(networkPeer, playerId);
+        //Helper.SendMessageToPeer(networkPeer, playerId);
         Helper.SendMessageToAllPeers($"Welcome {networkPeer.UserName} join server");
 
         dataContainer.AddPlayerWithName(networkPeer);
@@ -413,22 +423,11 @@ internal class BLMMBehavior2 : MultiplayerTeamSelectComponent
         //}
     }
 
-
-    public override void OnClearScene()
+    public void SendData()
     {
-        base.OnClearScene();
-
-        //if (k == null)
-        //{
-        //    Debug.Print("OnClearScene|IS NULL");
-        //}
-        //else
-        //{
-        //    Debug.Print($"OnClearScene|{k.IsInWarmup}");
-        //}
+        MultiplayerRoundController multiplayerRoundController = Mission.GetMissionBehavior<MultiplayerRoundController>();
         try
         {
-            MultiplayerRoundController multiplayerRoundController = Mission.GetMissionBehavior<MultiplayerRoundController>();
             if (multiplayerRoundController == null)
             {
                 Helper.PrintError("[OnClearScene|multiplayerRoundController is null]");
@@ -487,6 +486,7 @@ internal class BLMMBehavior2 : MultiplayerTeamSelectComponent
                 ["RoundCount"] = multiplayerRoundController.RoundCount,
             };
             PlayerMatchDataContainer.SetTag(data);
+
         }
         catch (Exception e)
         {
@@ -501,7 +501,7 @@ internal class BLMMBehavior2 : MultiplayerTeamSelectComponent
         MultiplayerWarmupComponent k = Mission.GetMissionBehavior<MultiplayerWarmupComponent>();
         if (k == null)
         {
-            PlayerMatchDataContainer.TurnMatchToNorm();
+            //PlayerMatchDataContainer.TurnMatchToNorm();
             string result = JsonConvert.SerializeObject(dataContainer);
             Debug.Print(result);
             try
@@ -524,5 +524,24 @@ internal class BLMMBehavior2 : MultiplayerTeamSelectComponent
         }
         // 刷新数据
         dataContainer.RefreshhAll();
+
+        // 踢出玩家
+        if (multiplayerRoundController.IsMatchEnding)
+        {
+            KickHelper.KickList(GameNetwork.NetworkPeers);
+        }
     }
+
+    public override void OnClearScene()
+    {
+        //if (k == null)
+        //{
+        //    Debug.Print("OnClearScene|IS NULL");
+        //}
+        //else
+        //{
+        //    Debug.Print($"OnClearScene|{k.IsInWarmup}");
+        //}
+    }
+
 }

@@ -10,6 +10,14 @@ namespace BLMMX.Helpers;
 
 public class KickHelper
 {
+    public static void KickList(List<NetworkCommunicator> communicators)
+    {
+        foreach (NetworkCommunicator item in communicators)
+        {
+            Kick(item);
+        }
+    }
+
     public static void Kick(NetworkCommunicator networkPeer)
     {
         if (networkPeer == null)

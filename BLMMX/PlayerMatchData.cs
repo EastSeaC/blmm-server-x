@@ -382,7 +382,14 @@ public class PlayerMatchDataContainer
         _players[PlayerId] = playerMatchData;
     }
 
+    public void MarkLeaveServer(string PlayerId)
+    {
+        if (!_players.ContainsKey(PlayerId)) return;
 
+        PlayerMatchData playerMatchData = _players[PlayerId];
+        playerMatchData.MarkLeaveServer();
+        _players[PlayerId] = playerMatchData;
+    }
 }
 public class PlayerMatchData
 {
@@ -440,6 +447,8 @@ public class PlayerMatchData
     public int Lose_rounds { get => lose_rounds; set => lose_rounds = value; }
     public int Draw_rounds { get => draw_rounds; set => draw_rounds = value; }
     public int Total_rounds { get => total_rounds; set => total_rounds = value; }
+
+    public bool IsLeaveServer { get; set; } = false;
 
     public PlayerMatchData(string PlayerId)
     {
@@ -521,4 +530,9 @@ public class PlayerMatchData
     public void AddInfantryTimes() { Infantry++; }
     public void AddCavarlryTimes() { cavalry++; }
     public void AddRangerTimes() { archer++; }
+
+    public void MarkLeaveServer()
+    {
+        IsLeaveServer = true;
+    }
 }
