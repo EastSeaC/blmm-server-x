@@ -423,7 +423,7 @@ internal class BLMMBehavior2 : MultiplayerTeamSelectComponent
         //}
     }
 
-    public void SendData()
+    public async void SendData()
     {
         MultiplayerRoundController multiplayerRoundController = Mission.GetMissionBehavior<MultiplayerRoundController>();
         try
@@ -528,6 +528,8 @@ internal class BLMMBehavior2 : MultiplayerTeamSelectComponent
         // 踢出玩家
         if (multiplayerRoundController.IsMatchEnding)
         {
+            Helper.SendMessageToAllPeers("比赛结束。将踢出所有人");
+            await Task.Delay(2000);
             KickHelper.KickList(GameNetwork.NetworkPeers);
         }
     }
