@@ -16,8 +16,13 @@ public class PatchWorker
         Harmony harmony = new("com.es.patch");
         harmony.PatchAll();
 
-        AddPrefix(harmony, typeof(MultiplayerTeamSelectComponent), "ChangeTeamServer", BindingFlags.Public | BindingFlags.Instance,
-            typeof(PatchClientChangeTeam), nameof(PatchClientChangeTeam.PrefixChangeTeam));
+        //AddPrefix(harmony, typeof(MultiplayerTeamSelectComponent), "ChangeTeamServer", BindingFlags.Public | BindingFlags.Instance,
+        //    typeof(PatchClientChangeTeam), nameof(PatchClientChangeTeam.PrefixChangeTeam));
+        AddPrefix(harmony, typeof(MultiplayerRoundController), "PostMatchEnd", BindingFlags.NonPublic | BindingFlags.Instance,
+            typeof(PatchClientChangeTeam), nameof(PatchClientChangeTeam.PrefixOnPostRoundEnded));
+
+        //AddPrefix(harmony, typeof(MissionMultiplayerFlagDomination), "HandleRoundEnd", BindingFlags.NonPublic | BindingFlags.Instance,
+        //    typeof(PatchClientChangeTeam), nameof(PatchClientChangeTeam.PrefixOnRoundEnd));
     }
 
     private static void AddPrefix(Harmony harmony, Type classToPatch, string functionToPatchName, BindingFlags flags, Type patchClass, string functionPatchName)

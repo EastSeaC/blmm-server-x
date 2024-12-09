@@ -19,26 +19,32 @@ internal class BLMMBehavior2 : MultiplayerTeamSelectComponent
     /// </summary>
     private static Timer timer;
     private static Timer timerIn2s;
-    private static PlayerMatchDataContainer dataContainer = new();
+    private static PlayerMatchDataContainer dataContainer;
+
+    public static PlayerMatchDataContainer DataContainer
+    {
+        get; set;
+    }
+
+    private static bool IsRegEvent = false;
     public BLMMBehavior2()
     {
         // 设置为0将会使得 只有当玩家进入后，MissionTimer才会启动计时
         timer = new(0f, 1f);
         timerIn2s = new(0f, 2f);
+
+        dataContainer ??= new();
+
     }
     public override void OnBehaviorInitialize()
     {
         base.OnBehaviorInitialize();
 
         //GetMatchPlayerList();
+        dataContainer ??= new();
 
-        MultiplayerRoundController multiplayerRoundController = Mission.GetMissionBehavior<MultiplayerRoundController>();
-        if (multiplayerRoundController == null)
-        {
-            return;
-        }
 
-        multiplayerRoundController.OnPostRoundEnded += SendData;
+
     }
     /// <summary>
     /// 本模块为BLMM专用,BTL不需要
@@ -119,7 +125,7 @@ internal class BLMMBehavior2 : MultiplayerTeamSelectComponent
     }
 
 
-    public override async void OnMissionTick(float dt)
+    public override void OnMissionTick(float dt)
     {
         base.OnMissionTick(dt);
 
@@ -127,6 +133,29 @@ internal class BLMMBehavior2 : MultiplayerTeamSelectComponent
         if (timerIn2s.Check(Mission.Current.CurrentTime))
         {
             Helper.PrintError($"[ES]CurPlayerNum:{GameNetwork.NetworkPeerCount}, Spectator:{Mission.GetMissionBehavior<MissionScoreboardComponent>().Spectators.Count}");
+
+            if (!IsRegEvent)
+            {
+                MultiplayerRoundController multiplayerRoundController = Mission.GetMissionBehavior<MultiplayerRoundController>();
+                if (multiplayerRoundController == null)
+                {
+                    Helper.Print("[es|event]register event failed");
+                    return;
+                }
+                else
+                {
+                    //multiplayerRoundController.OnPostRoundEnded += SendData;
+                    //multiplayerRoundController.OnPreRoundEnding += SendData;
+                    //multiplayerRoundController.OnRoundEnding += SendData;
+                    //multiplayerRoundController.OnCurrentRoundStateChanged += SendData;
+
+                    Helper.Print("[es|event]register event successful");
+                    IsRegEvent = true;
+                }
+            }
+            else
+            {
+            }
         }
 
         if (timer.Check(Mission.Current.CurrentTime))
@@ -164,12 +193,14 @@ internal class BLMMBehavior2 : MultiplayerTeamSelectComponent
     {
         string playerId = networkPeer.VirtualPlayer.Id.ToString();
         //Helper.SendMessageToPeer(networkPeer, playerId);
-        Helper.SendMessageToAllPeers($"Welcome {networkPeer.UserName} join server");
+        Helper.SendMessageToAllPeers($"欢迎 {networkPeer.UserName} 进入服务器");
+        Helper.SendMessageToPeer(networkPeer, "本BLMM服务器由C_urse 赞助，快说感谢大C!");
 
         dataContainer.AddPlayerWithName(networkPeer);
         //Debug.Print(JsonConvert.SerializeObject(dataContainer));
         GetPlayerVerifyCodeAsync(networkPeer);
         SendPlayerName(networkPeer);
+
         Debug.Print("[OnPlayerConnectedToServer|PlayerJoined]");
 
         KickWeirdBodyProperties(networkPeer);
@@ -241,7 +272,7 @@ internal class BLMMBehavior2 : MultiplayerTeamSelectComponent
                 //string affectedPlayerId = affectedAgent.MissionPeer.GetNetworkPeer().VirtualPlayer.Index.ToString();
                 string affectorPlayerId = affectorAgent.MissionPeer.GetNetworkPeer().VirtualPlayer.Id.ToString();
 
-                if (affectedAgent.Team.TeamIndex == affectorAgent.Team.TeamIndex)
+                if (affectedAgent.Team == affectorAgent.Team)
                 {
                     dataContainer.AddTKValue(affectorPlayerId, InflictedDamage);
                 }
@@ -273,7 +304,7 @@ internal class BLMMBehavior2 : MultiplayerTeamSelectComponent
                 if (affectorAgent.IsPlayerControlled)
                 {
                     string affectorPlayerId = affectorAgent.MissionPeer.GetNetworkPeer().VirtualPlayer.Id.ToString();
-                    if (affectedRiderAgent.Team.TeamIndex == affectorAgent.Team.TeamIndex)
+                    if (affectedRiderAgent.Team == affectorAgent.Team)
                     {
                         dataContainer.AddPlayerTKHorse(affectorPlayerId, InflictedDamage);
                     }
@@ -299,6 +330,7 @@ internal class BLMMBehavior2 : MultiplayerTeamSelectComponent
     {
         base.OnEndMission();
 
+        SendData();
         //foreach (NetworkCommunicator? peer in GameNetwork.NetworkPeers)
         //{
         //    GameNetwork.AddNetworkPeerToDisconnectAsServer(peer);
@@ -430,13 +462,22 @@ internal class BLMMBehavior2 : MultiplayerTeamSelectComponent
         {
             if (multiplayerRoundController == null)
             {
-                Helper.PrintError("[OnClearScene|multiplayerRoundController is null]");
+                Helper.PrintError("[es|multiplayerRoundController is null]");
                 return;
             }
 
             MissionScoreboardComponent scoreboardComponent = Mission.GetMissionBehavior<MissionScoreboardComponent>();
 
+            //if (multiplayerRoundController.RoundWinner == BattleSideEnum.Attacker)
+            //{
+            //    dataContainer.AddAttackWinRoundNum();
+            //}
+            //else
+            //{
+            //    dataContainer.AddDefendWinRoundNum();
+            //}
 
+            int attacker_score = scoreboardComponent.GetRoundScore(BattleSideEnum.Attacker);
             foreach (MissionPeer missionPeer in scoreboardComponent.GetSideSafe(BattleSideEnum.Attacker).Players)
             {
                 string PlayerId = missionPeer.GetNetworkPeer().VirtualPlayer.Id.ToString();
@@ -445,20 +486,11 @@ internal class BLMMBehavior2 : MultiplayerTeamSelectComponent
                 dataContainer.SetAssistNumber(PlayerId, missionPeer.AssistCount);
                 // 添加进攻队伍
                 PlayerMatchDataContainer.AddAttackPlayer(PlayerId);
-                dataContainer.SetRoundScore(PlayerId, scoreboardComponent.GetRoundScore(BattleSideEnum.Attacker));
-                if (multiplayerRoundController.RoundWinner == BattleSideEnum.Attacker)
-                {
-                    dataContainer.AddAttackWinRoundNum();
-                    dataContainer.AddWinRound(PlayerId);
-                }
-                else
-                {
-                    dataContainer.AddDefendWinRoundNum();
-                    dataContainer.AddLoseRound(PlayerId);
-                }
-
+                dataContainer.SetRoundScore(PlayerId, attacker_score);
 
             }
+
+            int defender_score = scoreboardComponent.GetRoundScore(BattleSideEnum.Defender);
             foreach (MissionPeer missionPeer in scoreboardComponent.GetSideSafe(BattleSideEnum.Defender).Players)
             {
                 string PlayerId = missionPeer.GetNetworkPeer().VirtualPlayer.Id.ToString();
@@ -467,17 +499,7 @@ internal class BLMMBehavior2 : MultiplayerTeamSelectComponent
                 dataContainer.SetAssistNumber(PlayerId, missionPeer.AssistCount);
                 // 添加防御队伍
                 PlayerMatchDataContainer.AddDefendPlayer(PlayerId);
-                dataContainer.SetRoundScore(PlayerId, scoreboardComponent.GetRoundScore(BattleSideEnum.Defender));
-                if (multiplayerRoundController.RoundWinner == BattleSideEnum.Defender)
-                {
-                    dataContainer.AddAttackWinRoundNum();
-                    dataContainer.AddWinRound(PlayerId);
-                }
-                else
-                {
-                    dataContainer.AddDefendWinRoundNum();
-                    dataContainer.AddLoseRound(PlayerId);
-                }
+                dataContainer.SetRoundScore(PlayerId, defender_score);
             }
 
             Dictionary<string, object> data = new()
@@ -498,36 +520,29 @@ internal class BLMMBehavior2 : MultiplayerTeamSelectComponent
         ////////////////////////////////////////
         // 发送数据
         ////////////////////////////////////////
-        MultiplayerWarmupComponent k = Mission.GetMissionBehavior<MultiplayerWarmupComponent>();
-        if (k == null)
+        Helper.Print("[es|send data to web]");
+        //PlayerMatchDataContainer.TurnMatchToNorm();
+        string result = JsonConvert.SerializeObject(dataContainer);
+        Debug.Print(result);
+        try
         {
-            //PlayerMatchDataContainer.TurnMatchToNorm();
-            string result = JsonConvert.SerializeObject(dataContainer);
-            Debug.Print(result);
-            try
-            {
-                HttpHelper.PostStringAsync(WebUrlManager.UploadMatchData, result);
-                Debug.Print("[OnClearScene|Sended DataToServer]");
-
-            }
-            catch (Exception ex)
-            {
-                Debug.Print(ex.Message, color: Debug.DebugColor.Red);
-                Debug.Print(ex.StackTrace, color: Debug.DebugColor.Red);
-                return;
-            }
+            HttpHelper.PostStringAsync(WebUrlManager.UploadMatchData, result);
+            Debug.Print("[es|Sended DataToServer]");
 
         }
-        else
+        catch (Exception ex)
         {
-            PlayerMatchDataContainer.TurnMatchToTest();
+            Debug.Print(ex.Message, color: Debug.DebugColor.Red);
+            Debug.Print(ex.StackTrace, color: Debug.DebugColor.Red);
+            return;
         }
         // 刷新数据
-        dataContainer.RefreshhAll();
+        //dataContainer.RefreshhAll();
 
         // 踢出玩家
         if (multiplayerRoundController.IsMatchEnding)
         {
+            Helper.Print("[es| match over , kick out all man]");
             Helper.SendMessageToAllPeers("比赛结束。将踢出所有人");
             await Task.Delay(2000);
             KickHelper.KickList(GameNetwork.NetworkPeers);

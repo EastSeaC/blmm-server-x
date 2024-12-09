@@ -25,9 +25,9 @@ public class PlayerMatchDataContainer
     [JsonProperty]
     private static int DefendRound;
 
-    [JsonProperty] private static List<string> AttackPlayerIds;
+    [JsonProperty] private static HashSet<string> AttackPlayerIds;
 
-    [JsonProperty] private static List<string> DefendPlayerIds;
+    [JsonProperty] private static HashSet<string> DefendPlayerIds;
 
     [JsonProperty]
     private static object Tag = "Norm";
@@ -38,8 +38,8 @@ public class PlayerMatchDataContainer
     public PlayerMatchDataContainer()
     {
         _players ??= new();
-        AttackPlayerIds = new List<string>();
-        DefendPlayerIds = new List<string>();
+        AttackPlayerIds = new HashSet<string>();
+        DefendPlayerIds = new HashSet<string>();
 
         MultiplayerOptions.Instance.GetOptionFromOptionType(MultiplayerOptions.OptionType.ServerName, MultiplayerOptions.MultiplayerOptionsAccessMode.CurrentMapOptions).GetValue(out string text7);
         ServerName = text7;
@@ -111,7 +111,7 @@ public class PlayerMatchDataContainer
         string player_id = missionPeer.GetNetworkPeer().VirtualPlayer.Id.ToString();
         string player_name = missionPeer.DisplayedName;
 
-        Helper.PrintError($"[es]添加 {player_id} NameIn AddPlayerWithName {player_name}");
+        Helper.PrintError($"[es] add {player_id} NameIn AddPlayerWithName {player_name}");
         AddPlayerWithName(player_id, player_name);
     }
 
@@ -254,7 +254,7 @@ public class PlayerMatchDataContainer
         _players[player_id] = playerMatchData;
     }
 
-    public void RefreshhAll()
+    public static void RefreshhAll()
     {
         // 遍历键值对并修改值
         _players = new();
@@ -280,11 +280,13 @@ public class PlayerMatchDataContainer
     public void AddAttackWinRoundNum()
     {
         AttackRound++;
+        Helper.PrintError($"AddAttackWinRoundNum {AttackRound}");
     }
 
     public void AddDefendWinRoundNum()
     {
         DefendRound++;
+        Helper.PrintError($"AddDefendWinRoundNum {DefendRound}");
     }
 
     public void AddAttackWinBureauNum()
@@ -324,9 +326,25 @@ public class PlayerMatchDataContainer
         _players[playerId] = k;
     }
 
+    public void AddAttackerSideScores(int score = 1)
+    {
+        AttackRound += score;
+        Helper.PrintError($"cur attack round score is {AttackRound}");
+    }
+
+
     internal void SetAttackerSideScores(int sideScore)
     {
         AttackRound = sideScore;
+
+        foreach (string k in AttackPlayerIds)
+        {
+            bool v = _players.TryGetValue(k, out PlayerMatchData playerMatchData);
+            if (v && playerMatchData != null)
+            {
+                playerMatchData.Win_rounds = sideScore;
+            }
+        }
     }
 
     public void SetDefenderSideScores(int sideScore)
@@ -378,7 +396,7 @@ public class PlayerMatchDataContainer
     public void SetRoundScore(string PlayerId, int v)
     {
         PlayerMatchData playerMatchData = _players[PlayerId];
-        playerMatchData.Win1 = v;
+        playerMatchData.Win = v;
         _players[PlayerId] = playerMatchData;
     }
 
@@ -390,6 +408,16 @@ public class PlayerMatchDataContainer
         playerMatchData.MarkLeaveServer();
         _players[PlayerId] = playerMatchData;
     }
+
+    internal void SetAttackerSidePlayer(List<string> attack_player_ids)
+    {
+        foreach(var i in attack_player_ids)
+        {
+            AttackPlayerIds.Add(i);
+        }
+
+        Helper.Print("[SetAttackerSidePlayer] success");
+    }
 }
 public class PlayerMatchData
 {
@@ -400,8 +428,8 @@ public class PlayerMatchData
     private int KillNum = 0;
     private int DeadNum = 0;
     private int AssistNum = 0;
-    private int Win = 0;
-    private int Lose = 0;
+    private int win = 0;
+    private int lose = 0;
     private int Draw = 0;
 
     private int win_rounds = 0;
@@ -437,8 +465,10 @@ public class PlayerMatchData
     [JsonProperty("assist")]
     public int AssistNum1 { get => AssistNum; set => AssistNum = value; }
     [JsonProperty("win")]
-    public int Win1 { get => Win; set => Win = value; }
-    public int Lose1 { get => Lose; set => Lose = value; }
+    public int Win { get => win; set => win = value; }
+
+    [JsonProperty("Lose1")]
+    public int Lose { get => lose; set => lose = value; }
     public int Draw1 { get => Draw; set => Draw = value; }
     public int Infantry { get => infantry; set => infantry = value; }
     public int Cavalry { get => cavalry; set => cavalry = value; }
@@ -468,8 +498,8 @@ public class PlayerMatchData
         KillNum = 0;
         DeadNum = 0;
         AssistNum = 0;
-        Win = 0;
-        Lose = 0;
+        win = 0;
+        lose = 0;
         Draw = 0;
 
         win_rounds = 0;
@@ -519,12 +549,12 @@ public class PlayerMatchData
 
     public void AddWinNum()
     {
-        Win++;
+        win++;
     }
 
     public void AddFailedNum()
     {
-        Lose++;
+        lose++;
     }
 
     public void AddInfantryTimes() { Infantry++; }

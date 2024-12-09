@@ -23,8 +23,8 @@ public class Program
 
         //Console.WriteLine(JsonConvert.SerializeObject(dataContainer));
 
-        PlayerMatchDataContainer.AddAttackWinRoundNum();
-        PlayerMatchDataContainer.AddDefendWinBureauNum();
+        //PlayerMatchDataContainer.AddAttackWinRoundNum();
+        //PlayerMatchDataContainer.AddDefendWinBureauNum();
         PlayerMatchDataContainer.TurnMatchToTest();
 
         PlayerMatchDataContainer.AddAttackPlayers(new() { "2.0.0.545", "2.0.05" });
