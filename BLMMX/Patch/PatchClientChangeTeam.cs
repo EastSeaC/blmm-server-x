@@ -1,14 +1,9 @@
 ﻿using BLMMX.Const;
 using BLMMX.Helpers;
+using HarmonyLib;
 using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using TaleWorlds.Library;
 using TaleWorlds.MountAndBlade;
-using TaleWorlds.MountAndBlade.Multiplayer;
 
 namespace BLMMX.Patch;
 
@@ -23,30 +18,33 @@ public class PatchClientChangeTeam
         if (team == Mission.Current.SpectatorTeam) { return true; }
 
 
-        if (IsOpenBLMMMatch && playerTeams.TryGetValue(networkPeer, out Team team1))
+        if (__instance.GetPlayerCountForTeam(team) == 6)
         {
-            if (team != team1)
-            {
-                return false;
-            }
+            Helper.SendMessageToPeer(networkPeer, "不可以超过 6 个人");
+            return false;
         }
         return true;
     }
 
     public static bool PrefixOnRoundEnd(MissionMultiplayerFlagDomination __instance, ref CaptureTheFlagCaptureResultEnum roundResult)
     {
-        if (roundResult == CaptureTheFlagCaptureResultEnum.AttackersWin)
-        {
-            BLMMBehavior2.DataContainer.AddAttackWinRoundNum();
-        }
-        else
-        {
-            BLMMBehavior2.DataContainer.AddDefendWinRoundNum();
-        }
+        //if (roundResult == CaptureTheFlagCaptureResultEnum.AttackersWin)
+        //{
+        //    BLMMBehavior2.DataContainer.AddAttackWinRoundNum();
+        //}
+        //else
+        //{
+        //    BLMMBehavior2.DataContainer.AddDefendWinRoundNum();
+        //}
         return true;
     }
 
-    public static bool PrefixOnPostRoundEnded(MultiplayerRoundController __instance)
+    /// <summary>
+    /// 比赛结束发送信息
+    /// </summary>
+    /// <param name="__instance"></param>
+    /// <returns></returns>
+    public static bool PrefixOnPostMatchEnded(MultiplayerRoundController __instance)
     {
         ////////////////////////////////////////
         // 发送数据
@@ -62,7 +60,9 @@ public class PatchClientChangeTeam
 
             BLMMBehavior2.DataContainer.SetAttackerSideScores(missionScoreboardSide_attacker.SideScore);
 
-            BLMMBehavior2.DataContainer.SetDefenderSideScores(missionScoreboardComponent.GetSideSafe(TaleWorlds.Core.BattleSideEnum.Defender).SideScore);
+            MissionScoreboardComponent.MissionScoreboardSide missionScoreboardSide_defender = missionScoreboardComponent.GetSideSafe(TaleWorlds.Core.BattleSideEnum.Defender);
+            List<string> defend_player_ids = missionScoreboardSide_defender.Players.Select(x => x.GetNetworkPeer().VirtualPlayer.Id.ToString()).ToList();
+            BLMMBehavior2.DataContainer.SetDefenderSideScores(missionScoreboardSide_defender.SideScore);
         }
 
         string result = JsonConvert.SerializeObject(BLMMBehavior2.DataContainer);
@@ -83,6 +83,28 @@ public class PatchClientChangeTeam
             //BLMMBehavior2.DataContainer.RefreshhAll();
             BLMMBehavior2.DataContainer = new();
         }
+        return true;
+    }
+}
+
+[HarmonyPatch(typeof(MultiplayerTeamSelectComponent), "ChangeTeamServer")]
+public class MultiplayerTeamSelectComponentPatch
+{
+    static bool Prefix(MultiplayerTeamSelectComponent __instance, ref NetworkCommunicator networkPeer, ref Team team)
+    {
+        // 允许切旁观
+        if (team == Mission.Current.SpectatorTeam) { return true; }
+
+
+        if (__instance.GetPlayerCountForTeam(team) == 6)
+        {
+            if (networkPeer != null)
+            {
+                Helper.SendMessageToPeer(networkPeer, "不可以超过 6 个人");
+            }
+            return false;
+        }
+
         return true;
     }
 }

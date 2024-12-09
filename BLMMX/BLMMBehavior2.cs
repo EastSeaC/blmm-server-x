@@ -23,7 +23,7 @@ internal class BLMMBehavior2 : MultiplayerTeamSelectComponent
 
     public static PlayerMatchDataContainer DataContainer
     {
-        get; set;
+        get => dataContainer; set { dataContainer = value; }
     }
 
     private static bool IsRegEvent = false;
