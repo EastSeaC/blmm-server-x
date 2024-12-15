@@ -6,6 +6,8 @@ using TaleWorlds.Core;
 using TaleWorlds.Library;
 using TaleWorlds.MountAndBlade;
 using BLMMX.ChatCommands.AdminCommands;
+using HarmonyLib;
+using BLMMX.Patch;
 
 namespace BLMMX;
 
@@ -17,6 +19,10 @@ public class SubModule : MBSubModuleBase
 
         Helper.Print("Registering Chat Commands...");
         RegisterChatCommands();
+
+        Harmony harmony = new("com.es.patch");
+        harmony.PatchAll();
+        PatchWorker.Apply(harmony);
     }
 
     private static void RegisterChatCommands()

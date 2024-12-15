@@ -1,5 +1,6 @@
 ﻿using BLMMX.Const;
 using BLMMX.Helpers;
+using BLMMX.util;
 using HarmonyLib;
 using Newtonsoft.Json;
 using TaleWorlds.Library;
@@ -11,20 +12,21 @@ public class PatchClientChangeTeam
 {
     public static bool IsOpenBLMMMatch = false;
 
+
     public static Dictionary<NetworkCommunicator, Team> playerTeams = new();
-    public static bool PrefixChangeTeam(MultiplayerTeamSelectComponent __instance, NetworkCommunicator networkPeer, Team team)
-    {
-        // 允许切旁观
-        if (team == Mission.Current.SpectatorTeam) { return true; }
+    //public static bool PrefixChangeTeam(MultiplayerTeamSelectComponent __instance, NetworkCommunicator networkPeer, Team team)
+    //{
+    //    // 允许切旁观
+    //    if (team == Mission.Current.SpectatorTeam) { return true; }
 
 
-        if (__instance.GetPlayerCountForTeam(team) == 6)
-        {
-            Helper.SendMessageToPeer(networkPeer, "不可以超过 6 个人");
-            return false;
-        }
-        return true;
-    }
+    //    if (__instance.GetPlayerCountForTeam(team) == 6)
+    //    {
+    //        Helper.SendMessageToPeer(networkPeer, "不可以超过 6 个人");
+    //        return false;
+    //    }
+    //    return true;
+    //}
 
     public static bool PrefixOnRoundEnd(MissionMultiplayerFlagDomination __instance, ref CaptureTheFlagCaptureResultEnum roundResult)
     {
@@ -49,7 +51,7 @@ public class PatchClientChangeTeam
         ////////////////////////////////////////
         // 发送数据
         ////////////////////////////////////////
-        Helper.Print("[es|send data to web]");
+        Helper.Print("[es|PrefixOnPostMatchEnded] patch successfuly");
         //PlayerMatchDataContainer.TurnMatchToNorm();
         MissionScoreboardComponent missionScoreboardComponent = Mission.Current.GetMissionBehavior<MissionScoreboardComponent>();
         if (missionScoreboardComponent != null)
@@ -83,14 +85,87 @@ public class PatchClientChangeTeam
             //BLMMBehavior2.DataContainer.RefreshhAll();
             BLMMBehavior2.DataContainer = new();
         }
+
+        // 换边
+        if ( MatchManager.MatchState == ESMatchState.FirstMatch)
+        {
+            Helper.Print("[MatchState|Switch2SecondMatch]");
+            MatchManager.SetMatchState(ESMatchState.SecondMatch);
+
+            MissionScoreboardComponent missionScoreboardComponent1 = Mission.Current.GetMissionBehavior<MissionScoreboardComponent>();
+            missionScoreboardComponent1.ChangeTeamScore(Mission.Current.Teams.Attacker, 0);
+            missionScoreboardComponent1.ChangeTeamScore(Mission.Current.Teams.Defender, 0);
+            MultiplayerTeamSelectComponent multiplayerTeamSelectComponent = Mission.Current.GetMissionBehavior<MultiplayerTeamSelectComponent>();
+
+            MissionScoreboardComponent.MissionScoreboardSide missionScoreboardSide_attacker = missionScoreboardComponent1.GetSideSafe(TaleWorlds.Core.BattleSideEnum.Attacker);
+            List<NetworkCommunicator> networkCommunicator_attackers = new();
+            foreach (MissionPeer? item in missionScoreboardSide_attacker.Players)
+            {
+                NetworkCommunicator networkPeer = item.GetNetworkPeer();
+                networkCommunicator_attackers.Add(networkPeer);
+                multiplayerTeamSelectComponent.ChangeTeamServer(networkPeer, Mission.Current.SpectatorTeam);
+            }
+
+            List<NetworkCommunicator> networkCommunicator_defenders = new();
+            MissionScoreboardComponent.MissionScoreboardSide missionScoreboardSide_defender = missionScoreboardComponent1.GetSideSafe(TaleWorlds.Core.BattleSideEnum.Defender);
+            foreach (MissionPeer? item in missionScoreboardSide_defender.Players)
+            {
+                NetworkCommunicator networkPeer = item.GetNetworkPeer();
+                networkCommunicator_defenders.Add(networkPeer);
+                multiplayerTeamSelectComponent.ChangeTeamServer(item.GetNetworkPeer(), Mission.Current.SpectatorTeam);
+            }
+
+            foreach (NetworkCommunicator item in networkCommunicator_defenders)
+            {
+                multiplayerTeamSelectComponent.ChangeTeamServer(item, Mission.Current.Teams.Attacker);
+            }
+            foreach (NetworkCommunicator item in networkCommunicator_attackers)
+            {
+                multiplayerTeamSelectComponent.ChangeTeamServer(item, Mission.Current.Teams.Defender);
+            }
+
+            __instance.RoundCount = 0;
+            ReflectionHelper.SetProperty(__instance, "CurrentRoundState", MultiplayerRoundState.WaitingForPlayers);
+            ReflectionHelper.InvokeMethod(__instance, "BeginNewRound", Array.Empty<object>());
+            return false;
+        }
+        else if (MatchManager.MatchState == ESMatchState.SecondMatch)
+        {
+            MatchManager.SetMatchState(ESMatchState.FirstMatch);
+        }
         return true;
     }
 }
 
-[HarmonyPatch(typeof(MultiplayerTeamSelectComponent), "ChangeTeamServer")]
+public class MatchManager
+{
+    public static ESMatchState MatchState { get; set; }
+
+    public static void SetMatchState(ESMatchState matchState)
+    {
+        MatchState = matchState;
+    }
+}
+
+public enum ESMatchState
+{
+    None,
+    FirstMatch,
+    SecondMatch,
+}
+
+public enum ESMatchType
+{
+    Match66,
+    Match88,
+}
+
+
+
+
 public class MultiplayerTeamSelectComponentPatch
 {
-    static bool Prefix(MultiplayerTeamSelectComponent __instance, ref NetworkCommunicator networkPeer, ref Team team)
+    public static bool Prefix(MultiplayerTeamSelectComponent __instance, ref NetworkCommunicator networkPeer, ref Team team)
     {
         // 允许切旁观
         if (team == Mission.Current.SpectatorTeam) { return true; }
@@ -103,6 +178,10 @@ public class MultiplayerTeamSelectComponentPatch
                 Helper.SendMessageToPeer(networkPeer, "不可以超过 6 个人");
             }
             return false;
+        }
+        else
+        {
+            BLMMBehavior2.DataContainer.MarkPlayerNoSpecatator(Helper.GetPlayerId(networkPeer));
         }
 
         return true;

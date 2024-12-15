@@ -76,6 +76,7 @@ public class PlayerMatchDataContainer
         Tag = tag;
     }
 
+    #region 玩家 记录添加 和名字添加
     public void AddPlayer(string player_id)
     {
         _players.TryAdd(player_id, new(player_id));
@@ -135,6 +136,8 @@ public class PlayerMatchDataContainer
             _players[player_id] = p;
         }
     }
+    #endregion
+
 
     public static void AddAttackPlayer(string playerId)
     {
@@ -411,158 +414,173 @@ public class PlayerMatchDataContainer
 
     internal void SetAttackerSidePlayer(List<string> attack_player_ids)
     {
-        foreach(var i in attack_player_ids)
+        foreach (var i in attack_player_ids)
         {
             AttackPlayerIds.Add(i);
         }
 
         Helper.Print("[SetAttackerSidePlayer] success");
     }
-}
-public class PlayerMatchData
-{
-    public string player_id;
-    public string player_name;
 
-
-    private int KillNum = 0;
-    private int DeadNum = 0;
-    private int AssistNum = 0;
-    private int win = 0;
-    private int lose = 0;
-    private int Draw = 0;
-
-    private int win_rounds = 0;
-    private int lose_rounds = 0;
-    private int draw_rounds = 0;
-    private int total_rounds = 0;
-
-    private int infantry = 0; // 步兵
-    private int cavalry = 0; //  骑兵
-    private int archer = 0; //弓兵
-
-    private float AttackValue = 0;
-    private float TKValue = 0;
-    private float TKTimes = 0;
-
-    private int AttackHorse = 0;
-    private int TKHorse = 0;
-
-
-
-    [JsonProperty("damage")]
-    public float AttackValue1 { get => AttackValue; set => AttackValue = value; }
-    [JsonProperty("team_damage")]
-    public float TKValue1 { get => TKValue; set => TKValue = value; }
-    [JsonProperty("tk_times")]
-    public float TKTimes1 { get => TKTimes; set => TKTimes = value; }
-    [JsonProperty("horse_damage")]
-    public int AttackHorse1 { get => AttackHorse; set => AttackHorse = value; }
-    public int TKHorse1 { get => TKHorse; set => TKHorse = value; }
-    public int KillNum1 { get => KillNum; set => KillNum = value; }
-    [JsonProperty("death")]
-    public int DeadNum1 { get => DeadNum; set => DeadNum = value; }
-    [JsonProperty("assist")]
-    public int AssistNum1 { get => AssistNum; set => AssistNum = value; }
-    [JsonProperty("win")]
-    public int Win { get => win; set => win = value; }
-
-    [JsonProperty("Lose1")]
-    public int Lose { get => lose; set => lose = value; }
-    public int Draw1 { get => Draw; set => Draw = value; }
-    public int Infantry { get => infantry; set => infantry = value; }
-    public int Cavalry { get => cavalry; set => cavalry = value; }
-    public int Archer { get => archer; set => archer = value; }
-    public int Win_rounds { get => win_rounds; set => win_rounds = value; }
-    public int Lose_rounds { get => lose_rounds; set => lose_rounds = value; }
-    public int Draw_rounds { get => draw_rounds; set => draw_rounds = value; }
-    public int Total_rounds { get => total_rounds; set => total_rounds = value; }
-
-    public bool IsLeaveServer { get; set; } = false;
-
-    public PlayerMatchData(string PlayerId)
+    internal void MarkPlayerNoSpecatator(string player_id)
     {
-        player_id = PlayerId;
+        if (_players.TryGetValue(player_id, out PlayerMatchData? playerMatchData))
+        {
+            if (playerMatchData != null)
+            {
+                playerMatchData.IsSpecator = false;
+                _players[player_id] = playerMatchData;
+            }
+        }
     }
-
-    public PlayerMatchData(string PlayerId, string PlayerName)
+    public class PlayerMatchData
     {
-        player_id = PlayerId;
-        player_name = PlayerName;
-    }
-    /// <summary>
-    /// 重新归零数据
-    /// </summary>
-    public void RefreshAll()
-    {
-        KillNum = 0;
-        DeadNum = 0;
-        AssistNum = 0;
-        win = 0;
-        lose = 0;
-        Draw = 0;
+        public string player_id;
+        public string player_name;
 
-        win_rounds = 0;
-        lose_rounds = 0;
-        draw_rounds = 0;
-        total_rounds = 0;
 
-        infantry = 0; // 步兵
-        cavalry = 0; // 骑兵
-        archer = 0; // 弓兵
+        private int KillNum = 0;
+        private int DeadNum = 0;
+        private int AssistNum = 0;
+        private int win = 0;
+        private int lose = 0;
+        private int Draw = 0;
 
-        AttackValue = 0;
-        TKValue = 0;
-        TKTimes = 0;
+        private int win_rounds = 0;
+        private int lose_rounds = 0;
+        private int draw_rounds = 0;
+        private int total_rounds = 0;
 
-        AttackHorse = 0;
-        TKHorse = 0;
+        private int infantry = 0; // 步兵
+        private int cavalry = 0; //  骑兵
+        private int archer = 0; //弓兵
 
-    }
+        private float AttackValue = 0;
+        private float TKValue = 0;
+        private float TKTimes = 0;
 
-    public void AddAttack(float AttackValue1)
-    {
-        this.AttackValue1 += AttackValue1;
-    }
+        private int AttackHorse = 0;
+        private int TKHorse = 0;
 
-    public void AddTK(float TKValue1) { this.TKValue1 += TKValue1; }
+        private bool isSpecator = true;
 
 
 
-    public void AddAttackHorse(int AttackHorseValue)
-    {
-        AttackHorse1 += AttackHorseValue;
-    }
+        [JsonProperty("damage")]
+        public float AttackValue1 { get => AttackValue; set => AttackValue = value; }
+        [JsonProperty("team_damage")]
+        public float TKValue1 { get => TKValue; set => TKValue = value; }
+        [JsonProperty("tk_times")]
+        public float TKTimes1 { get => TKTimes; set => TKTimes = value; }
+        [JsonProperty("horse_damage")]
+        public int AttackHorse1 { get => AttackHorse; set => AttackHorse = value; }
+        public int TKHorse1 { get => TKHorse; set => TKHorse = value; }
+        public int KillNum1 { get => KillNum; set => KillNum = value; }
+        [JsonProperty("death")]
+        public int DeadNum1 { get => DeadNum; set => DeadNum = value; }
+        [JsonProperty("assist")]
+        public int AssistNum1 { get => AssistNum; set => AssistNum = value; }
+        [JsonProperty("win")]
+        public int Win { get => win; set => win = value; }
 
-    public void AddTKHorse(int TKHorseValue)
-    {
-        TKHorse1 += TKHorseValue;
-    }
+        [JsonProperty("Lose1")]
+        public int Lose { get => lose; set => lose = value; }
+        public int Draw1 { get => Draw; set => Draw = value; }
+        public int Infantry { get => infantry; set => infantry = value; }
+        public int Cavalry { get => cavalry; set => cavalry = value; }
+        public int Archer { get => archer; set => archer = value; }
+        public int Win_rounds { get => win_rounds; set => win_rounds = value; }
+        public int Lose_rounds { get => lose_rounds; set => lose_rounds = value; }
+        public int Draw_rounds { get => draw_rounds; set => draw_rounds = value; }
+        public int Total_rounds { get => total_rounds; set => total_rounds = value; }
 
-    public void AddKillNum() { KillNum1++; }
-    public void AddDeadNum() { DeadNum1++; }
+        public bool IsSpecator { get => isSpecator; set => isSpecator = value; }
+        public bool IsLeaveServer { get; set; } = false;
 
-    public void AddTotalRounds()
-    {
-        total_rounds++;
-    }
+        public PlayerMatchData(string PlayerId)
+        {
+            player_id = PlayerId;
+        }
 
-    public void AddWinNum()
-    {
-        win++;
-    }
+        public PlayerMatchData(string PlayerId, string PlayerName)
+        {
+            player_id = PlayerId;
+            player_name = PlayerName;
+        }
+        /// <summary>
+        /// 重新归零数据
+        /// </summary>
+        public void RefreshAll()
+        {
+            KillNum = 0;
+            DeadNum = 0;
+            AssistNum = 0;
+            win = 0;
+            lose = 0;
+            Draw = 0;
 
-    public void AddFailedNum()
-    {
-        lose++;
-    }
+            win_rounds = 0;
+            lose_rounds = 0;
+            draw_rounds = 0;
+            total_rounds = 0;
 
-    public void AddInfantryTimes() { Infantry++; }
-    public void AddCavarlryTimes() { cavalry++; }
-    public void AddRangerTimes() { archer++; }
+            infantry = 0; // 步兵
+            cavalry = 0; // 骑兵
+            archer = 0; // 弓兵
 
-    public void MarkLeaveServer()
-    {
-        IsLeaveServer = true;
+            AttackValue = 0;
+            TKValue = 0;
+            TKTimes = 0;
+
+            AttackHorse = 0;
+            TKHorse = 0;
+
+        }
+
+        public void AddAttack(float AttackValue1)
+        {
+            this.AttackValue1 += AttackValue1;
+        }
+
+        public void AddTK(float TKValue1) { this.TKValue1 += TKValue1; }
+
+
+
+        public void AddAttackHorse(int AttackHorseValue)
+        {
+            AttackHorse1 += AttackHorseValue;
+        }
+
+        public void AddTKHorse(int TKHorseValue)
+        {
+            TKHorse1 += TKHorseValue;
+        }
+
+        public void AddKillNum() { KillNum1++; }
+        public void AddDeadNum() { DeadNum1++; }
+
+        public void AddTotalRounds()
+        {
+            total_rounds++;
+        }
+
+        public void AddWinNum()
+        {
+            win++;
+        }
+
+        public void AddFailedNum()
+        {
+            lose++;
+        }
+
+        public void AddInfantryTimes() { Infantry++; }
+        public void AddCavarlryTimes() { cavalry++; }
+        public void AddRangerTimes() { archer++; }
+
+        public void MarkLeaveServer()
+        {
+            IsLeaveServer = true;
+        }
     }
 }

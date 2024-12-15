@@ -20,7 +20,7 @@ public class KickHelper
 
     public static void Kick(NetworkCommunicator networkPeer)
     {
-        if (networkPeer == null)
+        if (networkPeer != null)
         {
             DisconnectInfo disconnectInfo = networkPeer.PlayerConnectionInfo.GetParameter<DisconnectInfo>("DisconnectInfo") ?? new DisconnectInfo();
             disconnectInfo.Type = DisconnectType.KickedByHost;
