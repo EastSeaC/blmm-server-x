@@ -1,13 +1,13 @@
 ﻿using BLMMX.Const;
+using BLMMX.Entity;
 using BLMMX.Helpers;
 using BLMMX.MatchTable;
+using BLMMX.Util;
 using Newtonsoft.Json;
 using TaleWorlds.Core;
 using TaleWorlds.Library;
 using TaleWorlds.MountAndBlade;
 using TaleWorlds.MountAndBlade.Diamond;
-using TaleWorlds.MountAndBlade.Multiplayer;
-using TaleWorlds.PlayerServices;
 using Timer = TaleWorlds.Core.Timer;
 
 namespace BLMMX;
@@ -18,12 +18,33 @@ internal class BLMMBehavior2 : MultiplayerTeamSelectComponent
     /// 检查时间为1s
     /// </summary>
     private static Timer timer;
-    private static Timer timerIn2s;
+    private Timer timerIn3s;
     private static PlayerMatchDataContainer dataContainer;
+    private static WillMatchData willMatchData;
+
+    public static async void MarkCurrentMatchCancel(string reason = "auto")
+    {
+        if (willMatchData == null)
+        {
+            return;
+        }
+
+        willMatchData.isCancel = true;
+        willMatchData.cancelReason = reason;
+        Helper.SendMessageToAllPeers("对局取消，踢出所有人");
+        await Task.Delay(3000);
+        KickHelper.KickList(GameNetwork.NetworkPeers);
+    }
 
     public static PlayerMatchDataContainer DataContainer
     {
         get => dataContainer; set { dataContainer = value; }
+    }
+
+    public static WillMatchData ConWillMatchData
+    {
+        get => willMatchData;
+        set => willMatchData = value;
     }
 
     private static bool IsRegEvent = false;
@@ -31,10 +52,10 @@ internal class BLMMBehavior2 : MultiplayerTeamSelectComponent
     {
         // 设置为0将会使得 只有当玩家进入后，MissionTimer才会启动计时
         timer = new(0f, 1f);
-        timerIn2s = new(0f, 2f);
+        timerIn3s = new(0f, 3f);
 
         dataContainer ??= new();
-
+        willMatchData = WillMatchData.GetFake();
     }
     public override void OnBehaviorInitialize()
     {
@@ -87,6 +108,7 @@ internal class BLMMBehavior2 : MultiplayerTeamSelectComponent
             PlayerRegInfo playerRegInfo = JsonConvert.DeserializeObject<PlayerRegInfo>(result);
 
             if (playerRegInfo == null) return;
+            Helper.SendMessageToPeer(networkCommunicator, "QQ群：983357051");
             if (playerRegInfo.is_reg)
             {
                 Helper.SendMessageToPeer(networkCommunicator, "欢迎来到BLMM服务器，你已经注册");
@@ -125,14 +147,57 @@ internal class BLMMBehavior2 : MultiplayerTeamSelectComponent
     }
 
 
-    public override void OnMissionTick(float dt)
+    public override async void OnMissionTick(float dt)
     {
         base.OnMissionTick(dt);
 
 
-        if (timerIn2s.Check(Mission.Current.CurrentTime))
+        if (timerIn3s.Check(Mission.Current.CurrentTime))
         {
             Helper.PrintError($"[ES]CurPlayerNum:{GameNetwork.NetworkPeerCount}, Spectator:{Mission.GetMissionBehavior<MissionScoreboardComponent>().Spectators.Count}");
+
+            MultiplayerOptions.Instance.GetOptionFromOptionType(MultiplayerOptions.OptionType.ServerName, MultiplayerOptions.MultiplayerOptionsAccessMode.CurrentMapOptions).GetValue(value: out string serverName);
+
+            //Helper.Print($"willMatchData {willMatchData.isCancel} {willMatchData.isFinished}");
+            if (willMatchData == null || willMatchData.isCancel || willMatchData.isFinished)
+            {
+                await NetUtil.GetAsync("/get-match-obj/" + serverName,
+                (res) =>
+                {
+                    EWebResponse? eWebResponse = JsonConvert.DeserializeObject<EWebResponse>(res);
+                    if (eWebResponse != null)
+                    {
+                        if (eWebResponse.code == -1)
+                        {
+                            Helper.PrintWarning($"[es|get-match-obj] {eWebResponse.Message}");
+                        }
+                        else
+                        {
+                            //Console.WriteLine(eWebResponse.data);
+                            WillMatchData? willMatch = JsonConvert.DeserializeObject<WillMatchData>(eWebResponse.data.ToString());
+                            if (willMatch == null)
+                            {
+                                Helper.PrintError("[es|get-match-obj] data is null");
+                                return;
+                            }
+
+                            willMatchData = willMatch;
+                            Helper.SendMessageToAllPeers("成功读取匹配数据");
+                            //Console.WriteLine(willMatch.isCancel);
+                            //Console.WriteLine(willMatch.firstTeamCultrue);
+                            //foreach (string item in willMatch.secondTeamPlayerIds)
+                            //{
+                            //    Console.WriteLine(item);
+                            //}
+                        }
+                    }
+                }, (e) =>
+                {
+                    Helper.Print("[es|get-match-obj] error");
+                    Helper.Print(e.Message);
+                    Helper.Print(e.StackTrace);
+                });
+            }
 
             if (!IsRegEvent)
             {

@@ -1,10 +1,14 @@
 ﻿using BLMMX.Const;
+using BLMMX.Entity;
 using BLMMX.Helpers;
 using BLMMX.util;
 using HarmonyLib;
 using Newtonsoft.Json;
+using TaleWorlds.Core;
 using TaleWorlds.Library;
 using TaleWorlds.MountAndBlade;
+using TaleWorlds.ObjectSystem;
+using static TaleWorlds.MountAndBlade.Agent;
 
 namespace BLMMX.Patch;
 
@@ -87,7 +91,7 @@ public class PatchClientChangeTeam
         }
 
         // 换边
-        if ( MatchManager.MatchState == ESMatchState.FirstMatch)
+        if (MatchManager.MatchState == ESMatchState.FirstMatch)
         {
             Helper.Print("[MatchState|Switch2SecondMatch]");
             MatchManager.SetMatchState(ESMatchState.SecondMatch);
@@ -156,6 +160,7 @@ public enum ESMatchState
 
 public enum ESMatchType
 {
+    Match33,
     Match66,
     Match88,
 }
@@ -165,11 +170,68 @@ public enum ESMatchType
 
 public class MultiplayerTeamSelectComponentPatch
 {
+
     public static bool Prefix(MultiplayerTeamSelectComponent __instance, ref NetworkCommunicator networkPeer, ref Team team)
     {
         // 允许切旁观
         if (team == Mission.Current.SpectatorTeam) { return true; }
 
+        WillMatchData conWillMatchData = BLMMBehavior2.ConWillMatchData;
+        if (conWillMatchData != null && !conWillMatchData.isCancel && !conWillMatchData.isFinished)
+        {
+            int max_num = conWillMatchData.GetTeamMaxNum();
+
+            BasicCultureObject basicCultureObject = MBObjectManager.Instance.GetObject<BasicCultureObject>(MultiplayerOptions.OptionType.CultureTeam1.GetStrValue(MultiplayerOptions.MultiplayerOptionsAccessMode.CurrentMapOptions));
+            BasicCultureObject basicCultureObject2 = MBObjectManager.Instance.GetObject<BasicCultureObject>(MultiplayerOptions.OptionType.CultureTeam2.GetStrValue(MultiplayerOptions.MultiplayerOptionsAccessMode.CurrentMapOptions));
+
+            Helper.PrintWarning($"[MultiplayerTeamSelectComponentPatch|MatchState] {MatchManager.MatchState}");
+
+            switch (MatchManager.MatchState)
+            {
+                case ESMatchState.FirstMatch:
+                    if (conWillMatchData.firstTeamPlayerIds.Contains(Helper.GetPlayerId(networkPeer)) && team == Mission.Current.Teams[0])
+                    {
+                        
+                        return true;
+                    }
+                    else if (conWillMatchData.secondTeamPlayerIds.Contains(Helper.GetPlayerId(networkPeer)) && team == Mission.Current.Teams[1])
+                    {
+                        return true;
+                    }
+                    else
+                    {
+                        Helper.SendMessageToPeer(networkPeer, "非比赛选手禁止选队伍");
+                        return false;
+                    }
+
+                case ESMatchState.SecondMatch:
+                    if (conWillMatchData.firstTeamPlayerIds.Contains(Helper.GetPlayerId(networkPeer)) && team == Mission.Current.Teams[1])
+                    {
+
+                        return true;
+                    }
+                    else if (conWillMatchData.secondTeamPlayerIds.Contains(Helper.GetPlayerId(networkPeer)) && team == Mission.Current.Teams[0])
+                    {
+                        return true;
+                    }
+                    else
+                    {
+                        Helper.SendMessageToPeer(networkPeer, "非比赛选手禁止选队伍");
+                        return false;
+                    }
+            }
+
+
+
+            if (__instance.GetPlayerCountForTeam(team) == max_num)
+            {
+                if (networkPeer != null)
+                {
+                    Helper.SendMessageToPeer(networkPeer, $"不可以超过 {max_num} 个人");
+                }
+                return false;
+            }
+        }
 
         if (__instance.GetPlayerCountForTeam(team) == 6)
         {
