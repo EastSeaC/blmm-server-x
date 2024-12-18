@@ -21,19 +21,16 @@ namespace BLMMX.ChatCommands.AdminCommands
             if (Mission.Current != null)
             {
                 MultiplayerWarmupComponent multiplayerWarmupComponent = Mission.Current.GetMissionBehavior<MultiplayerWarmupComponent>();
+                multiplayerWarmupComponent.EndWarmupProgress();
 
-                MethodInfo? methodInfo = typeof(MultiplayerWarmupComponent).GetMethod("EndWarmup", BindingFlags.NonPublic | BindingFlags.Instance);
-                if (methodInfo != null)
-                {
-                    methodInfo.Invoke(multiplayerWarmupComponent, null); // 第二个参数是方法的参数，若无则传递 null
-                }
-                else
-                {
-                    Helper.SendMessageToPeer(executor, "无法调用");
-                }
+
+                Helper.SendMessageToAllPeers("热身结束");
                 return true;
             }
-            return false;
+            else
+            {
+                return false;
+            }
         }
     }
 }

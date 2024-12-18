@@ -1,7 +1,6 @@
 ﻿using BLMMX.Helpers;
 using Newtonsoft.Json;
 using TaleWorlds.MountAndBlade;
-using TaleWorlds.PlayerServices;
 
 namespace BLMMX;
 
@@ -35,14 +34,23 @@ public class PlayerMatchDataContainer
     [JsonProperty]
     private static string ServerName = "[Unkonw]";
 
+    private Dictionary<string, Stack<PlayerMultiKillRecord>> _playerMultiKillRepo;
+
     public PlayerMatchDataContainer()
     {
         _players ??= new();
         AttackPlayerIds = new HashSet<string>();
         DefendPlayerIds = new HashSet<string>();
 
-        MultiplayerOptions.Instance.GetOptionFromOptionType(MultiplayerOptions.OptionType.ServerName, MultiplayerOptions.MultiplayerOptionsAccessMode.CurrentMapOptions).GetValue(out string text7);
-        ServerName = text7;
+        // 测试时需要 去掉这个
+        //MultiplayerOptions.Instance.GetOptionFromOptionType(MultiplayerOptions.OptionType.ServerName, MultiplayerOptions.MultiplayerOptionsAccessMode.CurrentMapOptions).GetValue(out string text7);
+        //ServerName = text7;
+        _playerMultiKillRepo = new Dictionary<string, Stack<PlayerMultiKillRecord>>();
+    }
+
+    public void SetServername(string servername)
+    {
+        ServerName = servername;
     }
 
     public void SHOW()
@@ -196,6 +204,44 @@ public class PlayerMatchDataContainer
 
     }
 
+    public KeyValuePair<bool, int> AddKillRecord(string attacker_player_id, string dead_player_id)
+    {
+        if (_playerMultiKillRepo.TryGetValue(attacker_player_id, out Stack<PlayerMultiKillRecord>? d))
+        {
+            if (d == null || d.Count == 0)
+            {
+                Stack<PlayerMultiKillRecord> d2 = new();
+                d2.Push(new PlayerMultiKillRecord(dead_player_id));
+                _playerMultiKillRepo[attacker_player_id] = d2;
+
+                return new KeyValuePair<bool, int>(false, 1);
+            }
+            else
+            {
+                PlayerMultiKillRecord peek_item = d.Peek();
+
+                if ((DateTime.Now - peek_item.killTime).TotalSeconds < 7)
+                {
+                    d.Push(new PlayerMultiKillRecord(dead_player_id, peek_item.multikillcount + 1));
+
+                    return new KeyValuePair<bool, int>(true, peek_item.multikillcount + 1);
+                }
+                else
+                {
+                    d.Push(new PlayerMultiKillRecord(dead_player_id));
+                    return new KeyValuePair<bool, int>(false, 1);
+                }
+            }
+        }
+        else
+        {
+            Stack<PlayerMultiKillRecord> d2 = new();
+            d2.Push(new PlayerMultiKillRecord(dead_player_id));
+            _playerMultiKillRepo[attacker_player_id] = d2;
+
+            return new KeyValuePair<bool, int>(false, 1);
+        }
+    }
     public void AddKillNumber(string player_id)
     {
         AddPlayer(player_id);
@@ -582,5 +628,34 @@ public class PlayerMatchDataContainer
         {
             IsLeaveServer = true;
         }
+    }
+
+    public class PlayerMultiKillRecord
+    {
+        public PlayerMultiKillRecord() { }
+
+        public PlayerMultiKillRecord(string killed_player_id)
+        {
+            this.killed_player_id = killed_player_id;
+            killTime = DateTime.Now;
+            multikillcount = 1;
+        }
+        public PlayerMultiKillRecord(DateTime dateTime, string killed_player_id)
+        {
+            killTime = dateTime;
+            this.killed_player_id = killed_player_id;
+        }
+
+        public PlayerMultiKillRecord(string killed_player_id, int v)
+        {
+            this.multikillcount = v;
+            this.killTime = DateTime.Now;
+            this.killed_player_id = killed_player_id;
+        }
+
+        public DateTime killTime;
+        public int multikillcount;
+        public bool is_multikill;
+        public string killed_player_id;
     }
 }

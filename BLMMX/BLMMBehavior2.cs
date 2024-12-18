@@ -55,6 +55,9 @@ internal class BLMMBehavior2 : MultiplayerTeamSelectComponent
         timerIn3s = new(0f, 3f);
 
         dataContainer ??= new();
+        MultiplayerOptions.Instance.GetOptionFromOptionType(MultiplayerOptions.OptionType.ServerName, MultiplayerOptions.MultiplayerOptionsAccessMode.CurrentMapOptions).GetValue(out string text7);
+        dataContainer.SetServername(text7);
+
         willMatchData = WillMatchData.GetFake();
     }
     public override void OnBehaviorInitialize()
@@ -159,6 +162,7 @@ internal class BLMMBehavior2 : MultiplayerTeamSelectComponent
             MultiplayerOptions.Instance.GetOptionFromOptionType(MultiplayerOptions.OptionType.ServerName, MultiplayerOptions.MultiplayerOptionsAccessMode.CurrentMapOptions).GetValue(value: out string serverName);
 
             //Helper.Print($"willMatchData {willMatchData.isCancel} {willMatchData.isFinished}");
+            // 比赛 已取消 或者已结束，立即获取信息
             if (willMatchData == null || willMatchData.isCancel || willMatchData.isFinished)
             {
                 await NetUtil.GetAsync("/get-match-obj/" + serverName,
@@ -435,46 +439,79 @@ internal class BLMMBehavior2 : MultiplayerTeamSelectComponent
         }
     }
 
-    //public override void OnEarlyAgentRemoved(Agent affectedAgent, Agent affectorAgent, AgentState agentState, KillingBlow blow)
-    //{
-    //    //string affectedPlayerId = affectedAgent.MissionPeer.GetNetworkPeer().VirtualPlayer.Index.ToString(); 
-    //    //string affectorPlayerId = affectorAgent.MissionPeer.GetNetworkPeer().VirtualPlayer.Index.ToString();
-    //    Helper.Print("[OnEarlyAgentRemoved|Tim]");
-    //    if (affectedAgent.IsHuman && affectedAgent.IsPlayerControlled)
-    //    {
-    //        string affectedPlayerId = affectedAgent.MissionPeer.GetNetworkPeer().VirtualPlayer.Id.ToString();
+    public override void OnEarlyAgentRemoved(Agent affectedAgent, Agent affectorAgent, AgentState agentState, KillingBlow blow)
+    {
+        //string affectedPlayerId = affectedAgent.MissionPeer.GetNetworkPeer().VirtualPlayer.Index.ToString(); 
+        //string affectorPlayerId = affectorAgent.MissionPeer.GetNetworkPeer().VirtualPlayer.Index.ToString();
+        Helper.Print("[OnEarlyAgentRemoved|Tim]");
+        if (affectedAgent.IsHuman && affectedAgent.IsPlayerControlled)
+        {
+            string affectedPlayerId = Helper.GetPlayerId(affectedAgent);
+            string affectedPlayerName = affectedAgent.MissionPeer.Name;
 
-    //        if (affectorAgent.IsHuman && affectorAgent.IsPlayerControlled)
-    //        {
-    //            string affectorPlayerId = affectorAgent.MissionPeer.GetNetworkPeer().VirtualPlayer.Id.ToString();
-    //            if (affectorAgent.Team.IsEnemyOf(affectedAgent.Team))
-    //            {
-    //                dataContainer.AddKillNumber2(affectorPlayerId);
-    //            }
-    //            else
-    //            {
-    //                dataContainer.AddPlayerTK(affectorPlayerId);
-    //            }
-    //        }
-    //        else if (affectorAgent.IsMount)
-    //        {
-    //            Agent affectorRiderAgent = affectorAgent.RiderAgent;
-    //            if (affectorRiderAgent != null)
-    //            {
-    //                if (affectorRiderAgent.IsPlayerControlled)
-    //                {
-    //                    // 玩家骑马撞死敌人
-    //                    string affectorPlayerId = affectorAgent.MissionPeer.GetNetworkPeer().VirtualPlayer.Id.ToString();
-    //                    dataContainer.AddKillNumber(affectorPlayerId);
-    //                }
-    //            }
-    //        }
-    //    }
-    //    else if (affectedAgent.IsMount)
-    //    {
+            if (affectorAgent.IsHuman && affectorAgent.IsPlayerControlled)
+            {
+                string affectorPlayerId = Helper.GetPlayerId(affectorAgent);
 
-    //    }
-    //}
+                if (affectorAgent.Team.IsEnemyOf(affectedAgent.Team))
+                {
+                    KeyValuePair<bool, int> k = dataContainer.AddKillRecord(affectorPlayerId, affectedPlayerId);
+                    if (k.Key)
+                    {
+                        switch (k.Value)
+                        {
+                            case 2:
+                                Helper.SendMessageToAllPeers($"玩家 {affectedPlayerName} {k.Value} 连杀");
+                                break;
+                            case 3:
+                            case 4:
+                                Helper.SendMessageToAllPeers($"玩家 {affectedPlayerName} {k.Value} 连杀");
+                                Helper.SendMessageToAllPeers($"玩家 {affectedPlayerName} {k.Value} 连杀");
+                                break;
+                            case 5:
+                            case 6:
+                                Helper.SendMessageToAllPeers($"玩家 {affectedPlayerName} {k.Value} 连杀");
+                                Helper.SendMessageToAllPeers($"玩家 {affectedPlayerName} {k.Value} 连杀");
+                                Helper.SendMessageToAllPeers($"玩家 {affectedPlayerName} {k.Value} 连杀");
+                                break;
+                            case 7:
+                            case 8:
+                                Helper.SendMessageToAllPeers($"玩家 {affectedPlayerName} {k.Value} 已超神");
+                                Helper.SendMessageToAllPeers($"玩家 {affectedPlayerName} {k.Value} 已超神");
+                                Helper.SendMessageToAllPeers($"玩家 {affectedPlayerName} {k.Value} 已超神");
+                                break;
+                            case 9:
+                                Helper.SendMessageToAllPeers($"玩家 {affectedPlayerName} {k.Value} 已杀穿对面");
+                                Helper.SendMessageToAllPeers($"玩家 {affectedPlayerName} {k.Value} 已杀穿对面");
+                                break ;
+                        }
+                    }
+                    dataContainer.AddKillNumber2(affectorPlayerId);
+                }
+                else
+                {
+                    dataContainer.AddPlayerTK(affectorPlayerId);
+                }
+            }
+            else if (affectorAgent.IsMount)
+            {
+                Agent affectorRiderAgent = affectorAgent.RiderAgent;
+                if (affectorRiderAgent != null)
+                {
+                    if (affectorRiderAgent.IsPlayerControlled)
+                    {
+                        // 玩家骑马撞死敌人
+                        string affectorPlayerId = affectorAgent.MissionPeer.GetNetworkPeer().VirtualPlayer.Id.ToString();
+                        dataContainer.AddKillNumber(affectorPlayerId);
+                    }
+                }
+            }
+        }
+        else if (affectedAgent.IsMount)
+        {
+
+        }
+    }
     public override void OnAgentRemoved(Agent affectedAgent, Agent affectorAgent, AgentState agentState, KillingBlow blow)
     {
 
