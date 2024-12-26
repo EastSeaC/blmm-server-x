@@ -17,10 +17,14 @@ internal class BLMMBehavior2 : MultiplayerTeamSelectComponent
     /// <summary>
     /// 检查时间为1s
     /// </summary>
-    private static Timer timer;
+    private Timer timerIn1s;
     private Timer timerIn3s;
+    private Timer timerIn5s;
     private static PlayerMatchDataContainer dataContainer;
     private static WillMatchData willMatchData;
+
+    private static int MaxAfterPlayerArrivadedWatingCount = 180;
+    private static int AfterPlayerArrivadedWatingCount;
 
     public static async void MarkCurrentMatchCancel(string reason = "auto")
     {
@@ -31,9 +35,35 @@ internal class BLMMBehavior2 : MultiplayerTeamSelectComponent
 
         willMatchData.isCancel = true;
         willMatchData.cancelReason = reason;
-        Helper.SendMessageToAllPeers("对局取消，踢出所有人");
+
+
+        await NetUtil.GetAsync("/cancel-match", (res) =>
+        {
+            if (res.IsEmpty())
+            {
+                Helper.SendMessageToAllPeers("比赛取消异常，请联系管理员");
+                return;
+            }
+            else
+            {
+                EWebResponse? eWebResponse = JsonConvert.DeserializeObject<EWebResponse>(res);
+                if (eWebResponse == null)
+                {
+                    return;
+                }
+
+                if (eWebResponse.code == 0)
+                {
+                    Helper.SendMessageToAllPeers("对局取消，踢出所有人");
+                }
+            }
+        }, (e) =>
+        {
+
+        });
         await Task.Delay(3000);
         KickHelper.KickList(GameNetwork.NetworkPeers);
+        //HttpHelper.DownloadStringTaskAsync()
     }
 
     public static PlayerMatchDataContainer DataContainer
@@ -51,14 +81,17 @@ internal class BLMMBehavior2 : MultiplayerTeamSelectComponent
     public BLMMBehavior2()
     {
         // 设置为0将会使得 只有当玩家进入后，MissionTimer才会启动计时
-        timer = new(0f, 1f);
+        timerIn1s = new(0f, 1f);
         timerIn3s = new(0f, 3f);
+        timerIn5s = new(0f, 5f);
 
         dataContainer ??= new();
         MultiplayerOptions.Instance.GetOptionFromOptionType(MultiplayerOptions.OptionType.ServerName, MultiplayerOptions.MultiplayerOptionsAccessMode.CurrentMapOptions).GetValue(out string text7);
         dataContainer.SetServername(text7);
 
         willMatchData = WillMatchData.GetFake();
+
+        AfterPlayerArrivadedWatingCount = 0;
     }
     public override void OnBehaviorInitialize()
     {
@@ -67,7 +100,7 @@ internal class BLMMBehavior2 : MultiplayerTeamSelectComponent
         //GetMatchPlayerList();
         dataContainer ??= new();
 
-
+        AfterPlayerArrivadedWatingCount = 0;
 
     }
     /// <summary>
@@ -108,7 +141,7 @@ internal class BLMMBehavior2 : MultiplayerTeamSelectComponent
             string result = await HttpHelper.DownloadStringTaskAsync(WebUrlManager.GetVerifyCodeEx(PlayerId));
 
             if (result == null) return;
-            PlayerRegInfo playerRegInfo = JsonConvert.DeserializeObject<PlayerRegInfo>(result);
+            PlayerRegInfo? playerRegInfo = JsonConvert.DeserializeObject<PlayerRegInfo>(result);
 
             if (playerRegInfo == null) return;
             Helper.SendMessageToPeer(networkCommunicator, "QQ群：983357051");
@@ -149,6 +182,18 @@ internal class BLMMBehavior2 : MultiplayerTeamSelectComponent
         }
     }
 
+    public bool CheckPlayerSelectPerks()
+    {
+        MissionScoreboardComponent missionScoreboardComponent = Mission.GetMissionBehavior<MissionScoreboardComponent>();
+        MissionScoreboardComponent.MissionScoreboardSide missionScoreboardSide = missionScoreboardComponent.GetSideSafe(BattleSideEnum.Attacker);
+        MissionScoreboardComponent.MissionScoreboardSide missionScoreboardSide_defender = missionScoreboardComponent.GetSideSafe(BattleSideEnum.Attacker);
+        if (missionScoreboardSide.CurrentPlayerCount < willMatchData.GetTeamMaxNum() || missionScoreboardSide_defender.CurrentPlayerCount < willMatchData.GetTeamMaxNum())
+        {
+            Helper.SendMessageToAllPeers("双方人数未到齐");
+            return false;
+        }
+        return true;
+    }
 
     public override async void OnMissionTick(float dt)
     {
@@ -227,8 +272,33 @@ internal class BLMMBehavior2 : MultiplayerTeamSelectComponent
             }
         }
 
-        if (timer.Check(Mission.Current.CurrentTime))
+        if (timerIn5s.Check(Mission.CurrentTime))
         {
+            Helper.SendMessageToAllPeers($"剩余时间:{MaxAfterPlayerArrivadedWatingCount - AfterPlayerArrivadedWatingCount}");
+
+            if (CheckPlayerSelectPerks())
+            {
+                MultiplayerWarmupComponent multiplayerWarmupComponent = Mission.GetMissionBehavior<MultiplayerWarmupComponent>();
+                multiplayerWarmupComponent.EndWarmupProgress();
+            }
+            else
+            {
+                MarkCurrentMatchCancel();
+            }
+
+        }
+        if (timerIn1s.Check(Mission.Current.CurrentTime))
+        {
+            AfterPlayerArrivadedWatingCount += 1;
+
+            MultiplayerWarmupComponent multiplayerWarmupComponent = Mission.GetMissionBehavior<MultiplayerWarmupComponent>();
+            if (multiplayerWarmupComponent != null && multiplayerWarmupComponent.IsInWarmup)
+            {
+                if (MaxAfterPlayerArrivadedWatingCount - AfterPlayerArrivadedWatingCount < 10)
+                {
+                    Helper.SendMessageToAllPeers($"剩余时间:{MaxAfterPlayerArrivadedWatingCount - AfterPlayerArrivadedWatingCount}");
+                }
+            }
             //Helper.PrintError("[ES]ddd");
 
             /// 匹配列表
@@ -245,9 +315,6 @@ internal class BLMMBehavior2 : MultiplayerTeamSelectComponent
             //string result = JsonConvert.SerializeObject(dataContainer, Formatting.Indented);
             // 刷新数据
             //Debug.Print(result);
-
-
-
         }
     }
 
@@ -255,6 +322,13 @@ internal class BLMMBehavior2 : MultiplayerTeamSelectComponent
     {
         Helper.SendMessageToAllPeers($"{networkPeer.UserName} leave server");
 
+        string playerId = Helper.GetPlayerId(networkPeer);
+
+        if (willMatchData != null && willMatchData.isplayerNeedMatch(playerId))
+        {
+            willMatchData.OffSetCurrentPlayerNumber(-1);
+            Helper.SendMessageToAllPeers($"当前到场人数 {willMatchData.CurrentPlayerNumber}/{willMatchData.GetTotalNumber()}");
+        }
     }
 
 
@@ -274,6 +348,17 @@ internal class BLMMBehavior2 : MultiplayerTeamSelectComponent
 
         KickWeirdBodyProperties(networkPeer);
         KickEmptyNames(networkPeer);
+
+        if (willMatchData != null && willMatchData.isplayerNeedMatch(playerId))
+        {
+            willMatchData.OffSetCurrentPlayerNumber(+1);
+            Helper.SendMessageToAllPeers($"当前到场人数 {willMatchData.CurrentPlayerNumber}/{willMatchData.GetTotalNumber()}");
+
+            if (willMatchData.isPlayerArrived())
+            {
+                Helper.SendMessageToAllPeers($"比赛双方到齐，请尽快进入对应的队伍");
+            }
+        }
     }
 
 
@@ -483,7 +568,7 @@ internal class BLMMBehavior2 : MultiplayerTeamSelectComponent
                             case 9:
                                 Helper.SendMessageToAllPeers($"玩家 {affectedPlayerName} {k.Value} 已杀穿对面");
                                 Helper.SendMessageToAllPeers($"玩家 {affectedPlayerName} {k.Value} 已杀穿对面");
-                                break ;
+                                break;
                         }
                     }
                     dataContainer.AddKillNumber2(affectorPlayerId);

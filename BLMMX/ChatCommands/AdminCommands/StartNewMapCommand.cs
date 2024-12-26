@@ -44,16 +44,51 @@ namespace BLMMX.ChatCommands.AdminCommands
 
                     //serverSide.SetIntermissionCultureVoting(false);
                     //serverSide.SetIntermissionCultureVoting(false);
+                    try
+                    {
+                        bool IsAssignale = (bool)ReflectionHelper.InvokeMethod(serverSide, "IsNewTaskAssignable", Array.Empty<object>());
+                        ReflectionHelper.SetField(serverSide, "_currentTask", null);
+                        Mission.Current.EndMission();
+                        serverSide.EndMission();
+                    }
+                    catch (Exception ex)
+                    {
+                        Helper.PrintError("es|www  ");
+                    }
 
-                    serverSide.EndMission();
 
                     //serverSide.StartGameAndMission();
                 }
+                else if (args.Equals("22"))
+                {
+                    KickHelper.KickList(GameNetwork.NetworkPeers);
+                    MultiplayerOptions.OptionType.Map.SetValue("mp_bnl_vatnborg", MultiplayerOptions.MultiplayerOptionsAccessMode.CurrentMapOptions);
+                    ServerSideIntermissionManager serverSide = ServerSideIntermissionManager.Instance;
+                    ReflectionHelper.SetField(serverSide, "_currentAutomatedBattleRemainingTime", 0f);
+                    ReflectionHelper.SetField(serverSide, "_passedTimeSinceLastAutomatedBattleStateClientInform", 1f);
+                    ReflectionHelper.SetField(serverSide, "_remainedAutomatedBattleCount", 0);
+
+                    MultiplayerIntermissionVotingManager.Instance.IsCultureVoteEnabled = false;
+                    MultiplayerIntermissionVotingManager.Instance.IsMapVoteEnabled = false;
+
+                    try
+                    {
+                        //bool IsAssignale = (bool)ReflectionHelper.InvokeMethod(serverSide, "IsNewTaskAssignable", Array.Empty<object>());
+                        ReflectionHelper.SetField(serverSide, "_currentTask", null);
+                        Mission.Current.EndMission();
+                        serverSide.EndMission();
+                    }
+                    catch (Exception ex)
+                    {
+                        Helper.PrintError("es|www  ");
+                    }
+                }
                 else if (args.Equals("2"))
                 {
-                    MultiplayerOptions.OptionType.Map.SetValue("mp_skirmish_map_003_skinc", MultiplayerOptions.MultiplayerOptionsAccessMode.CurrentMapOptions);
+                    MultiplayerOptions.OptionType.Map.SetValue("mp_bnl_vatnborg", MultiplayerOptions.MultiplayerOptionsAccessMode.CurrentMapOptions);
                     MultiplayerOptions.Instance.GetOptionFromOptionType(MultiplayerOptions.OptionType.Map, MultiplayerOptions.MultiplayerOptionsAccessMode.CurrentMapOptions).GetValue(out string text);
                     Helper.PrintError("[es|map] " + text);
+                    Helper.SendMessageToPeer(executor, "当前地图为" + text);
                 }
                 else if (args.Equals("3"))
                 {
@@ -64,16 +99,18 @@ namespace BLMMX.ChatCommands.AdminCommands
                 }
                 else
                 {
-                    MultiplayerOptions.OptionType.Map.SetValue(args, MultiplayerOptions.MultiplayerOptionsAccessMode.CurrentMapOptions);
                     MultiplayerOptionsExtensionsPatch.newmap_new = args;
+                    MultiplayerOptions.OptionType.Map.SetValue(args, MultiplayerOptions.MultiplayerOptionsAccessMode.CurrentMapOptions);
 
                     ServerSideIntermissionManager serverSide = ServerSideIntermissionManager.Instance;
                     ReflectionHelper.SetField(serverSide, "_currentAutomatedBattleRemainingTime", 0f);
                     ReflectionHelper.SetField(serverSide, "_passedTimeSinceLastAutomatedBattleStateClientInform", 1f);
+                    ReflectionHelper.SetField(serverSide, "_remainedAutomatedBattleCount", 0);
 
                     MultiplayerIntermissionVotingManager.Instance.IsCultureVoteEnabled = false;
                     MultiplayerIntermissionVotingManager.Instance.IsMapVoteEnabled = false;
                     Helper.SendMessageToPeer(executor, "地图已保存");
+                    ReflectionHelper.SetField(serverSide, "_currentTask", null);
                     serverSide.EndMission();
                 }
                 return true;
@@ -127,13 +164,24 @@ namespace BLMMX.ChatCommands.AdminCommands
         }
     }
 
-    [HarmonyPatch(typeof(ServerSideIntermissionManager), "SelectRandomMap")]
+    [HarmonyPatch(typeof(ServerSideIntermissionManager), "EndMission")]
     public class ServerSideIntermissionManagerPatch2
     {
-        static void Postfix()
+        static async void Postfix()
         {
             MultiplayerOptions.Instance.GetOptionFromOptionType(MultiplayerOptions.OptionType.Map, MultiplayerOptions.MultiplayerOptionsAccessMode.CurrentMapOptions).GetValue(out string text);
             Helper.PrintError("[es|SelectRandomMap|postfix]" + text);
+            await Task.Delay(18 * 1000);
+
+            ServerSideIntermissionManager instance = ServerSideIntermissionManager.Instance;
+            instance.StartMission();
+
+            await Task.Delay(5 * 1000);
+            if (instance.AutomatedBattleState == AutomatedBattleState.Idle)
+            {
+                ReflectionHelper.SetField(instance, "_currentTask", null);
+                instance.StartMission();
+            }
         }
     }
 
@@ -148,6 +196,16 @@ namespace BLMMX.ChatCommands.AdminCommands
                 Helper.PrintError("[es|MultiplayerOptionsExtensionsPatch]" + value);
                 if (newmap_new != null && !newmap_new.IsEmpty())
                 {
+                    if (newmap_new.Equals(value))
+                    {
+                        return true;
+                    }
+                    AutomatedBattleState automatedBattleState = ServerSideIntermissionManager.Instance.AutomatedBattleState;
+                    if (automatedBattleState == AutomatedBattleState.AtBattle)
+                    {
+                        return true;
+                    }
+
                     //MultiplayerOptions.OptionType.Map.SetValue(newmap_new, MultiplayerOptions.MultiplayerOptionsAccessMode.CurrentMapOptions);
                     //string cur_map_name = MultiplayerOptions.OptionType.Map.GetStrValue(MultiplayerOptions.MultiplayerOptionsAccessMode.CurrentMapOptions);
                     //Helper.PrintError("[es|MultiplayerOptionsExtensionsPatch|showMapName]" + cur_map_name);
@@ -159,15 +217,21 @@ namespace BLMMX.ChatCommands.AdminCommands
 
         static async void Postfix()
         {
+            string cur_map_name = MultiplayerOptions.OptionType.Map.GetStrValue(MultiplayerOptions.MultiplayerOptionsAccessMode.CurrentMapOptions);
             if (newmap_new != null && !newmap_new.IsEmpty())
             {
-                await Task.Delay(1000);
+                if (cur_map_name.Equals(newmap_new))
+                {
+                    return;
+                }
                 MultiplayerOptions.OptionType.Map.SetValue(newmap_new, MultiplayerOptions.MultiplayerOptionsAccessMode.CurrentMapOptions);
-
+                ServerSideIntermissionManager.Instance.StartMission();
+                Helper.PrintError("[es|MultiplayerOptionsExtensionsPatch|triggerProtect]");
             }
 
-            string cur_map_name = MultiplayerOptions.OptionType.Map.GetStrValue(MultiplayerOptions.MultiplayerOptionsAccessMode.CurrentMapOptions);
+
             Helper.PrintError("[es|MultiplayerOptionsExtensionsPatch|protect_map_name]" + cur_map_name);
+
         }
     }
 }

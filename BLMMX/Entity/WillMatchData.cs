@@ -38,6 +38,19 @@ public class WillMatchData
         };
     }
 
+    public int GetTotalNumber()
+    {
+        return GetTeamMaxNum() * 2;
+    }
+
+    private int currentplayerNumber;
+
+    public int CurrentPlayerNumber => currentplayerNumber;
+
+    public void OffSetCurrentPlayerNumber(int off)
+    {
+        currentplayerNumber += off;
+    }
 
     public EMatchConfig MatchConfig { get; set; }
 
@@ -47,7 +60,9 @@ public class WillMatchData
     public bool isFinished;
     internal object cancelReason;
 
-    public WillMatchData() { }
+    public WillMatchData() {
+        currentplayerNumber = 0;
+    }
 
     public static WillMatchData GetFake()
     {
@@ -55,8 +70,19 @@ public class WillMatchData
         {
             isCancel = true,
             isFinished = true,
+            currentplayerNumber = 0,
         };
         return k;
+    }
+
+    internal bool isplayerNeedMatch(string playerId)
+    {
+        return firstTeamPlayerIds.Contains(playerId) || secondTeamPlayerIds.Contains(playerId);
+    }
+
+    internal bool isPlayerArrived()
+    {
+        return currentplayerNumber == GetTotalNumber();
     }
 }
 

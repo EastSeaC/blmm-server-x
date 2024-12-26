@@ -135,6 +135,8 @@ public class PatchClientChangeTeam
         }
         else if (MatchManager.MatchState == ESMatchState.SecondMatch)
         {
+            // 踢出所有人，貌似有bug会闪退，但是踢出去就不会闪退
+            KickHelper.KickList(GameNetwork.NetworkPeers);
             MatchManager.SetMatchState(ESMatchState.FirstMatch);
         }
         return true;
