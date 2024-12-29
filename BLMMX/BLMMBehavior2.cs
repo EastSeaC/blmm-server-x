@@ -414,6 +414,12 @@ internal class BLMMBehavior2 : MultiplayerTeamSelectComponent
 
     public override void OnAgentHit(Agent affectedAgent, Agent affectorAgent, in MissionWeapon affectorWeapon, in Blow blow, in AttackCollisionData attackCollisionData)
     {
+        MultiplayerWarmupComponent multiplayerWarmupComponent = Mission.GetMissionBehavior<MultiplayerWarmupComponent>();
+        if (multiplayerWarmupComponent != null && multiplayerWarmupComponent.IsInWarmup)
+        {
+            return;
+        }
+
         base.OnAgentHit(affectedAgent, affectorAgent, affectorWeapon, blow, attackCollisionData);
 
         int InflictedDamage = blow.InflictedDamage;
@@ -503,6 +509,12 @@ internal class BLMMBehavior2 : MultiplayerTeamSelectComponent
     /// <param name="oldController"></param>
     protected override void OnAgentControllerChanged(Agent agent, Agent.ControllerType oldController)
     {
+        MultiplayerWarmupComponent multiplayerWarmupComponent = Mission.GetMissionBehavior<MultiplayerWarmupComponent>();
+        if (multiplayerWarmupComponent != null && multiplayerWarmupComponent.IsInWarmup)
+        {
+            return;
+        }
+
         if (agent.IsPlayerControlled)
         {
             dataContainer.AddPlayerWithName(agent.MissionPeer);
@@ -521,6 +533,9 @@ internal class BLMMBehavior2 : MultiplayerTeamSelectComponent
             {
                 dataContainer.AddInfantryTimes(PlayerId);
             }
+
+            // 增加复活次数
+            dataContainer.AddRespawnTimes(PlayerId);    
         }
     }
 
@@ -528,6 +543,12 @@ internal class BLMMBehavior2 : MultiplayerTeamSelectComponent
     {
         //string affectedPlayerId = affectedAgent.MissionPeer.GetNetworkPeer().VirtualPlayer.Index.ToString(); 
         //string affectorPlayerId = affectorAgent.MissionPeer.GetNetworkPeer().VirtualPlayer.Index.ToString();
+        MultiplayerWarmupComponent multiplayerWarmupComponent = Mission.GetMissionBehavior<MultiplayerWarmupComponent>();
+        if (multiplayerWarmupComponent != null && multiplayerWarmupComponent.IsInWarmup)
+        {
+            return;
+        }
+
         Helper.Print("[OnEarlyAgentRemoved|Tim]");
         if (affectedAgent.IsHuman && affectedAgent.IsPlayerControlled)
         {

@@ -36,6 +36,9 @@ public class PlayerMatchDataContainer
 
     private Dictionary<string, Stack<PlayerMultiKillRecord>> _playerMultiKillRepo;
 
+    private int FirstTeamTotalSpawnTimes ;
+    private int SecondTeamTotalSpawnTimes ;
+
     public PlayerMatchDataContainer()
     {
         _players ??= new();
@@ -46,6 +49,8 @@ public class PlayerMatchDataContainer
         //MultiplayerOptions.Instance.GetOptionFromOptionType(MultiplayerOptions.OptionType.ServerName, MultiplayerOptions.MultiplayerOptionsAccessMode.CurrentMapOptions).GetValue(out string text7);
         //ServerName = text7;
         _playerMultiKillRepo = new Dictionary<string, Stack<PlayerMultiKillRecord>>();
+        FirstTeamTotalSpawnTimes = 0;
+        SecondTeamTotalSpawnTimes = 0;
     }
 
     public void SetServername(string servername)
@@ -479,6 +484,19 @@ public class PlayerMatchDataContainer
             }
         }
     }
+
+    internal void AddRespawnTimes(string playerId)
+    {
+        if (_players.TryGetValue(playerId, out PlayerMatchData? playerMatchData))
+        {
+            if (playerMatchData != null)
+            {
+                playerMatchData.SpawnTimes += 1;
+                _players[playerId] = playerMatchData;
+            }
+        }
+    }
+
     public class PlayerMatchData
     {
         public string player_id;
@@ -509,6 +527,9 @@ public class PlayerMatchDataContainer
         private int TKHorse = 0;
 
         private bool isSpecator = true;
+
+        [JsonProperty("spawn_times")]
+        private int spawnTimes = 0;
 
 
 
@@ -542,6 +563,8 @@ public class PlayerMatchDataContainer
 
         public bool IsSpecator { get => isSpecator; set => isSpecator = value; }
         public bool IsLeaveServer { get; set; } = false;
+
+        public int SpawnTimes { get => spawnTimes; set => spawnTimes = value; }
 
         public PlayerMatchData(string PlayerId)
         {
@@ -580,7 +603,7 @@ public class PlayerMatchDataContainer
 
             AttackHorse = 0;
             TKHorse = 0;
-
+            spawnTimes = 0;
         }
 
         public void AddAttack(float AttackValue1)
