@@ -2,12 +2,15 @@
 using BLMMX.Entity;
 using BLMMX.Helpers;
 using BLMMX.MatchTable;
+using BLMMX.util;
 using BLMMX.Util;
 using Newtonsoft.Json;
 using TaleWorlds.Core;
 using TaleWorlds.Library;
 using TaleWorlds.MountAndBlade;
 using TaleWorlds.MountAndBlade.Diamond;
+using TaleWorlds.PlayerServices;
+using static TaleWorlds.MountAndBlade.MultiplayerWarmupComponent;
 using Timer = TaleWorlds.Core.Timer;
 
 namespace BLMMX;
@@ -62,7 +65,7 @@ internal class BLMMBehavior2 : MultiplayerTeamSelectComponent
 
         });
         await Task.Delay(3000);
-        KickHelper.KickList(GameNetwork.NetworkPeers);
+        //KickHelper.KickList(GameNetwork.NetworkPeers);
         //HttpHelper.DownloadStringTaskAsync()
     }
 
@@ -90,6 +93,7 @@ internal class BLMMBehavior2 : MultiplayerTeamSelectComponent
         dataContainer.SetServername(text7);
 
         willMatchData = WillMatchData.GetFake();
+        //willMatchData = null;
 
         AfterPlayerArrivadedWatingCount = 0;
     }
@@ -195,6 +199,31 @@ internal class BLMMBehavior2 : MultiplayerTeamSelectComponent
         return true;
     }
 
+    public void StatisticPlayernumber()
+    {
+        willMatchData.ResetCurrentPlayerNum();
+        foreach (NetworkCommunicator? item in GameNetwork.NetworkPeers)
+        {
+            if (item == null)
+            {
+                continue;
+            }
+            string playerId = Helper.GetPlayerId(item);
+            if (willMatchData.isplayerNeedMatch(playerId))
+            {
+                willMatchData.OffSetCurrentPlayerNumber(+1);
+
+
+
+            }
+        }
+        Helper.SendMessageToAllPeers($"当前到场人数 {willMatchData.CurrentPlayerNumber}/{willMatchData.GetTotalNumber()}");
+        if (willMatchData.isPlayerArrived())
+        {
+            Helper.SendMessageToAllPeers($"比赛双方到齐，请尽快进入对应的队伍");
+        }
+    }
+
     public override async void OnMissionTick(float dt)
     {
         base.OnMissionTick(dt);
@@ -231,6 +260,7 @@ internal class BLMMBehavior2 : MultiplayerTeamSelectComponent
                             }
 
                             willMatchData = willMatch;
+                            Helper.Print($"[es|get-match-obj-info] {willMatch.MatchType}");
                             Helper.SendMessageToAllPeers("成功读取匹配数据");
                             //Console.WriteLine(willMatch.isCancel);
                             //Console.WriteLine(willMatch.firstTeamCultrue);
@@ -246,6 +276,10 @@ internal class BLMMBehavior2 : MultiplayerTeamSelectComponent
                     Helper.Print(e.Message);
                     Helper.Print(e.StackTrace);
                 });
+            }
+            else
+            {
+                StatisticPlayernumber();
             }
 
             if (!IsRegEvent)
@@ -274,29 +308,57 @@ internal class BLMMBehavior2 : MultiplayerTeamSelectComponent
 
         if (timerIn5s.Check(Mission.CurrentTime))
         {
-            Helper.SendMessageToAllPeers($"剩余时间:{MaxAfterPlayerArrivadedWatingCount - AfterPlayerArrivadedWatingCount}");
+            //Helper.SendMessageToAllPeers($"剩余时间:{MaxAfterPlayerArrivadedWatingCount - AfterPlayerArrivadedWatingCount}");
 
-            if (CheckPlayerSelectPerks())
-            {
-                MultiplayerWarmupComponent multiplayerWarmupComponent = Mission.GetMissionBehavior<MultiplayerWarmupComponent>();
-                multiplayerWarmupComponent.EndWarmupProgress();
-            }
-            else
-            {
-                MarkCurrentMatchCancel();
-            }
+            //if (CheckPlayerSelectPerks())
+            //{
+            //    MultiplayerWarmupComponent multiplayerWarmupComponent = Mission.GetMissionBehavior<MultiplayerWarmupComponent>();
+            //    multiplayerWarmupComponent.EndWarmupProgress();
+            //}
+            //else
+            //{
+            //    MarkCurrentMatchCancel();
+            //}
 
         }
         if (timerIn1s.Check(Mission.Current.CurrentTime))
         {
-            AfterPlayerArrivadedWatingCount += 1;
-
+            if (willMatchData == null || willMatchData.isCancel || willMatchData.isFinished)
+            {
+                return;
+            }
+            KeyValuePair<bool, int> keyValuePair = WillMatchData.addConount();
             MultiplayerWarmupComponent multiplayerWarmupComponent = Mission.GetMissionBehavior<MultiplayerWarmupComponent>();
             if (multiplayerWarmupComponent != null && multiplayerWarmupComponent.IsInWarmup)
             {
-                if (MaxAfterPlayerArrivadedWatingCount - AfterPlayerArrivadedWatingCount < 10)
+                if (keyValuePair.Key) // 真表示等待结束
                 {
-                    Helper.SendMessageToAllPeers($"剩余时间:{MaxAfterPlayerArrivadedWatingCount - AfterPlayerArrivadedWatingCount}");
+                    if (CheckPlayerSelectPerks())
+                    {
+                        WarmupStates warmupStates = (WarmupStates)ReflectionHelper.GetField(multiplayerWarmupComponent, "WarmupState");
+                        if (warmupStates == WarmupStates.Ended)
+                        {
+                            return;
+                        }
+                        else if(warmupStates == WarmupStates.InProgress)
+                        {
+                            ReflectionHelper.InvokeMethod(multiplayerWarmupComponent, "EndWarmup", Array.Empty<object>());
+                            //multiplayerWarmupComponent.EndWarmupProgress();
+                        }
+                        Helper.SendMessageToAllPeers("比赛开始");
+                    }
+                    else
+                    {
+                        Helper.SendMessageToAllPeers("双方人数未到齐，比赛取消");
+                        MarkCurrentMatchCancel();
+                    }
+                }
+                else
+                {
+                    if (keyValuePair.Value < 10 || keyValuePair.Value % 5 == 0)
+                    {
+                        Helper.SendMessageToAllPeers($"剩余时间:{keyValuePair.Value} 当前人数{willMatchData.CurrentPlayerNumber}/{willMatchData.GetTotalNumber()}");
+                    }
                 }
             }
             //Helper.PrintError("[ES]ddd");
@@ -324,11 +386,7 @@ internal class BLMMBehavior2 : MultiplayerTeamSelectComponent
 
         string playerId = Helper.GetPlayerId(networkPeer);
 
-        if (willMatchData != null && willMatchData.isplayerNeedMatch(playerId))
-        {
-            willMatchData.OffSetCurrentPlayerNumber(-1);
-            Helper.SendMessageToAllPeers($"当前到场人数 {willMatchData.CurrentPlayerNumber}/{willMatchData.GetTotalNumber()}");
-        }
+        StatisticPlayernumber();
     }
 
 
@@ -349,16 +407,14 @@ internal class BLMMBehavior2 : MultiplayerTeamSelectComponent
         KickWeirdBodyProperties(networkPeer);
         KickEmptyNames(networkPeer);
 
-        if (willMatchData != null && willMatchData.isplayerNeedMatch(playerId))
+        if (willMatchData == null || willMatchData.isCancel || willMatchData.isFinished)
         {
-            willMatchData.OffSetCurrentPlayerNumber(+1);
-            Helper.SendMessageToAllPeers($"当前到场人数 {willMatchData.CurrentPlayerNumber}/{willMatchData.GetTotalNumber()}");
-
-            if (willMatchData.isPlayerArrived())
-            {
-                Helper.SendMessageToAllPeers($"比赛双方到齐，请尽快进入对应的队伍");
-            }
+            return;
         }
+
+        StatisticPlayernumber();
+
+
     }
 
 
@@ -535,7 +591,7 @@ internal class BLMMBehavior2 : MultiplayerTeamSelectComponent
             }
 
             // 增加复活次数
-            dataContainer.AddRespawnTimes(PlayerId);    
+            dataContainer.AddRespawnTimes(PlayerId);
         }
     }
 

@@ -1,4 +1,5 @@
-﻿using BLMMX.Patch;
+﻿using BLMMX.Helpers;
+using BLMMX.Patch;
 using Microsoft.VisualBasic;
 using Newtonsoft.Json;
 using System.IO;
@@ -25,15 +26,24 @@ public class WillMatchData
     [JsonProperty("second_team_player_ids")]
     public List<string> secondTeamPlayerIds { get => _secondTeamPlayerIds; set { _secondTeamPlayerIds = value; } }
 
+    [JsonProperty("match_type")]
     public ESMatchType MatchType { get; set; }
+
+    [JsonIgnore]
+    private const int WaitTime = 180;
+    [JsonIgnore]
+    private static int AfterPlayerArrivadedWatingCount = 0;
 
     public int GetTeamMaxNum()
     {
         return MatchType switch
         {
+            ESMatchType.Test11 => 1,
             ESMatchType.Match33 => 3,
             ESMatchType.Match66 => 6,
             ESMatchType.Match88 => 8,
+            ESMatchType.Test22 => 2,
+            ESMatchType.Test33 => 3,
             _ => 99,
         };
     }
@@ -50,6 +60,7 @@ public class WillMatchData
     public void OffSetCurrentPlayerNumber(int off)
     {
         currentplayerNumber += off;
+        currentplayerNumber = Math.Clamp(currentplayerNumber,0, GetTotalNumber());
     }
 
     public EMatchConfig MatchConfig { get; set; }
@@ -60,7 +71,8 @@ public class WillMatchData
     public bool isFinished;
     internal object cancelReason;
 
-    public WillMatchData() {
+    public WillMatchData()
+    {
         currentplayerNumber = 0;
     }
 
@@ -71,6 +83,8 @@ public class WillMatchData
             isCancel = true,
             isFinished = true,
             currentplayerNumber = 0,
+            firstTeamPlayerIds = new List<string>(),
+            secondTeamPlayerIds = new List<string>(),
         };
         return k;
     }
@@ -84,11 +98,35 @@ public class WillMatchData
     {
         return currentplayerNumber == GetTotalNumber();
     }
-}
 
-public class EMatchConfig
-{
-    public int TeamNumber;
-    public string MapName;
-    public List<int> TroopLimits;
+    public static void resetAllTImer()
+    {
+        AfterPlayerArrivadedWatingCount = 0;
+        Helper.Print("reset waiting count to 0");
+    }
+
+    public static KeyValuePair<bool, int> addConount()
+    {
+        AfterPlayerArrivadedWatingCount++;
+        Helper.Print($"add waiting count to {AfterPlayerArrivadedWatingCount}");
+        if (AfterPlayerArrivadedWatingCount >= WaitTime)
+        {
+            Helper.Print("Waiting time out");
+            
+            return new KeyValuePair<bool, int>(true, WaitTime - AfterPlayerArrivadedWatingCount);
+        }
+        return new KeyValuePair<bool, int>(false, WaitTime - AfterPlayerArrivadedWatingCount);
+    }
+
+    internal void ResetCurrentPlayerNum()
+    {
+        currentplayerNumber = 0;
+    }
+
+    public class EMatchConfig
+    {
+        public int TeamNumber;
+        public string MapName;
+        public List<int> TroopLimits;
+    }
 }

@@ -3,10 +3,12 @@ using BLMMX.Entity;
 using BLMMX.Helpers;
 using BLMMX.util;
 using HarmonyLib;
+using NetworkMessages.FromClient;
 using Newtonsoft.Json;
 using TaleWorlds.Core;
 using TaleWorlds.Library;
 using TaleWorlds.MountAndBlade;
+using TaleWorlds.MountAndBlade.Network.Messages;
 using TaleWorlds.ObjectSystem;
 using static TaleWorlds.MountAndBlade.Agent;
 
@@ -136,7 +138,7 @@ public class PatchClientChangeTeam
         else if (MatchManager.MatchState == ESMatchState.SecondMatch)
         {
             // 踢出所有人，貌似有bug会闪退，但是踢出去就不会闪退
-            KickHelper.KickList(GameNetwork.NetworkPeers);
+            //KickHelper.KickList(GameNetwork.NetworkPeers);
             MatchManager.SetMatchState(ESMatchState.FirstMatch);
         }
         return true;
@@ -165,6 +167,9 @@ public enum ESMatchType
     Match33,
     Match66,
     Match88,
+    Test11,
+    Test22,
+    Test33,
 }
 
 
@@ -173,8 +178,16 @@ public enum ESMatchType
 public class MultiplayerTeamSelectComponentPatch
 {
 
-    public static bool Prefix(MultiplayerTeamSelectComponent __instance, ref NetworkCommunicator networkPeer, ref Team team)
+    public static bool Prefix(MultiplayerTeamSelectComponent __instance, ref NetworkCommunicator peer, ref GameNetworkMessage baseMessage)
     {
+        MultiplayerWarmupComponent multiplayerWarmupComponent = Mission.Current.GetMissionBehavior<MultiplayerWarmupComponent>();
+        if (multiplayerWarmupComponent != null && multiplayerWarmupComponent.IsInWarmup)
+        {
+            Helper.Print("In warmup");
+            return true;
+        }
+        TeamChange teamChange = (TeamChange)baseMessage;
+        Team team = Mission.MissionNetworkHelper.GetTeamFromTeamIndex(teamChange.TeamIndex);
         // 允许切旁观
         if (team == Mission.Current.SpectatorTeam) { return true; }
 
@@ -191,34 +204,35 @@ public class MultiplayerTeamSelectComponentPatch
             switch (MatchManager.MatchState)
             {
                 case ESMatchState.FirstMatch:
-                    if (conWillMatchData.firstTeamPlayerIds.Contains(Helper.GetPlayerId(networkPeer)) && team == Mission.Current.Teams[0])
+                    if (conWillMatchData.firstTeamPlayerIds.Contains(Helper.GetPlayerId(peer)) && team == Mission.Current.Teams[0])
                     {
                         
                         return true;
                     }
-                    else if (conWillMatchData.secondTeamPlayerIds.Contains(Helper.GetPlayerId(networkPeer)) && team == Mission.Current.Teams[1])
+                    else if (conWillMatchData.secondTeamPlayerIds.Contains(Helper.GetPlayerId(peer)) && team == Mission.Current.Teams[1])
                     {
                         return true;
                     }
                     else
                     {
-                        Helper.SendMessageToPeer(networkPeer, "非比赛选手禁止选队伍");
+                        Helper.SendMessageToPeer(peer, "非比赛选手禁止选队伍");
+
                         return false;
                     }
 
                 case ESMatchState.SecondMatch:
-                    if (conWillMatchData.firstTeamPlayerIds.Contains(Helper.GetPlayerId(networkPeer)) && team == Mission.Current.Teams[1])
+                    if (conWillMatchData.firstTeamPlayerIds.Contains(Helper.GetPlayerId(peer)) && team == Mission.Current.Teams[1])
                     {
 
                         return true;
                     }
-                    else if (conWillMatchData.secondTeamPlayerIds.Contains(Helper.GetPlayerId(networkPeer)) && team == Mission.Current.Teams[0])
+                    else if (conWillMatchData.secondTeamPlayerIds.Contains(Helper.GetPlayerId(peer)) && team == Mission.Current.Teams[0])
                     {
                         return true;
                     }
                     else
                     {
-                        Helper.SendMessageToPeer(networkPeer, "非比赛选手禁止选队伍");
+                        Helper.SendMessageToPeer(peer, "非比赛选手禁止选队伍");
                         return false;
                     }
             }
@@ -227,9 +241,9 @@ public class MultiplayerTeamSelectComponentPatch
 
             if (__instance.GetPlayerCountForTeam(team) == max_num)
             {
-                if (networkPeer != null)
+                if (peer != null)
                 {
-                    Helper.SendMessageToPeer(networkPeer, $"不可以超过 {max_num} 个人");
+                    Helper.SendMessageToPeer(peer, $"不可以超过 {max_num} 个人");
                 }
                 return false;
             }
@@ -237,15 +251,15 @@ public class MultiplayerTeamSelectComponentPatch
 
         if (__instance.GetPlayerCountForTeam(team) == 6)
         {
-            if (networkPeer != null)
+            if (peer != null)
             {
-                Helper.SendMessageToPeer(networkPeer, "不可以超过 6 个人");
+                Helper.SendMessageToPeer(peer, "不可以超过 6 个人");
             }
             return false;
         }
         else
         {
-            BLMMBehavior2.DataContainer.MarkPlayerNoSpecatator(Helper.GetPlayerId(networkPeer));
+            BLMMBehavior2.DataContainer.MarkPlayerNoSpecatator(Helper.GetPlayerId(peer));
         }
 
         return true;

@@ -25,7 +25,7 @@ public class NetUtil
             try
             {
                 // 发起 GET 请求
-                //string url = "http://localhost:14725/get-match-obj/";
+                //string url = "http://110.42.98.67:14725/get-match-obj/";
                 HttpResponseMessage response = await sharedClient.GetAsync(route);
 
                 // 确保响应成功
