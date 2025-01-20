@@ -3,10 +3,34 @@ using BLMMX.Entity;
 using BLMMX.Helpers;
 using BLMMX.Util;
 using Newtonsoft.Json;
+using System.Net.NetworkInformation;
 
 public class Program
 {
-    public static async Task Main(string[] args)
+    public static void Main(string[] args)
+    {
+        // 你想要 ping 的 IP 地址
+        string ipAddress = "47.251.43.74"; // 例：Google的公共DNS服务器
+
+        Ping pingSender = new Ping(); // 创建一个 Ping 对象
+        try
+        {
+            PingReply reply = pingSender.Send(ipAddress); // 发送 ping 请求
+            if (reply.Status == IPStatus.Success) // 如果成功
+            {
+                Console.WriteLine($"Ping 成功: {reply.Address} - RTT = {reply.RoundtripTime}ms");
+            }
+            else
+            {
+                Console.WriteLine($"Ping 失败: {reply.Status}");
+            }
+        }
+        catch (PingException ex)
+        {
+            Console.WriteLine($"Ping 过程中出现错误: {ex.Message}");
+        }
+    }
+    public static async Task Mainex3(string[] args)
     {
         WillMatchData? willMatchData = null;
         string serverName = "CN_BTL_NINGBO_1";

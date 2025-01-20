@@ -29,6 +29,8 @@ internal class BLMMBehavior2 : MultiplayerTeamSelectComponent
     private static int MaxAfterPlayerArrivadedWatingCount = 180;
     private static int AfterPlayerArrivadedWatingCount;
 
+    public static WillMatchData GetWillMatchData => willMatchData;
+
     public static async void MarkCurrentMatchCancel(string reason = "auto")
     {
         if (willMatchData == null)
@@ -308,6 +310,27 @@ internal class BLMMBehavior2 : MultiplayerTeamSelectComponent
 
         if (timerIn5s.Check(Mission.CurrentTime))
         {
+            // 更新管理员名单
+            await NetUtil.GetAsync("get-admin-list", (res) =>
+            {
+                if (res.IsEmpty())
+                {
+                    return;
+                }
+                else
+                {
+                    List<string>? adminList = JsonConvert.DeserializeObject<List<string>>(res);
+                    if (adminList == null)
+                    {
+                        return;
+                    }
+                    AdminManager.admins = adminList;
+                }
+            }, (e) =>
+            {
+                Helper.PrintError(e.Message);
+                Helper.PrintError(e.StackTrace);
+            });
             //Helper.SendMessageToAllPeers($"剩余时间:{MaxAfterPlayerArrivadedWatingCount - AfterPlayerArrivadedWatingCount}");
 
             //if (CheckPlayerSelectPerks())
@@ -327,23 +350,24 @@ internal class BLMMBehavior2 : MultiplayerTeamSelectComponent
             {
                 return;
             }
-            KeyValuePair<bool, int> keyValuePair = WillMatchData.addConount();
             MultiplayerWarmupComponent multiplayerWarmupComponent = Mission.GetMissionBehavior<MultiplayerWarmupComponent>();
             if (multiplayerWarmupComponent != null && multiplayerWarmupComponent.IsInWarmup)
             {
+                KeyValuePair<bool, int> keyValuePair = WillMatchData.addConount();
+
                 if (keyValuePair.Key) // 真表示等待结束
                 {
                     if (CheckPlayerSelectPerks())
                     {
-                        WarmupStates warmupStates = (WarmupStates)ReflectionHelper.GetField(multiplayerWarmupComponent, "WarmupState");
+                        WarmupStates warmupStates = (WarmupStates)ReflectionHelper.GetProperty(multiplayerWarmupComponent, "WarmupState");
                         if (warmupStates == WarmupStates.Ended)
                         {
                             return;
                         }
-                        else if(warmupStates == WarmupStates.InProgress)
+                        else if (warmupStates == WarmupStates.InProgress)
                         {
-                            ReflectionHelper.InvokeMethod(multiplayerWarmupComponent, "EndWarmup", Array.Empty<object>());
-                            //multiplayerWarmupComponent.EndWarmupProgress();
+                            //ReflectionHelper.InvokeMethod(multiplayerWarmupComponent, "EndWarmup", Array.Empty<object>());
+                            multiplayerWarmupComponent.EndWarmupProgress();
                         }
                         Helper.SendMessageToAllPeers("比赛开始");
                     }
@@ -358,6 +382,11 @@ internal class BLMMBehavior2 : MultiplayerTeamSelectComponent
                     if (keyValuePair.Value < 10 || keyValuePair.Value % 5 == 0)
                     {
                         Helper.SendMessageToAllPeers($"剩余时间:{keyValuePair.Value} 当前人数{willMatchData.CurrentPlayerNumber}/{willMatchData.GetTotalNumber()}");
+                    }
+
+                    if (CheckPlayerSelectPerks() && WillMatchData.getLeftTime() > 30)
+                    {
+                        WillMatchData.SetLetfTime(30);
                     }
                 }
             }

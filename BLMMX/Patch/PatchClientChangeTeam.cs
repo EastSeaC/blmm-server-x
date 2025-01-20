@@ -103,7 +103,7 @@ public class PatchClientChangeTeam
             missionScoreboardComponent1.ChangeTeamScore(Mission.Current.Teams.Defender, 0);
             MultiplayerTeamSelectComponent multiplayerTeamSelectComponent = Mission.Current.GetMissionBehavior<MultiplayerTeamSelectComponent>();
 
-            MissionScoreboardComponent.MissionScoreboardSide missionScoreboardSide_attacker = missionScoreboardComponent1.GetSideSafe(TaleWorlds.Core.BattleSideEnum.Attacker);
+            MissionScoreboardComponent.MissionScoreboardSide missionScoreboardSide_attacker = missionScoreboardComponent1.GetSideSafe(BattleSideEnum.Attacker);
             List<NetworkCommunicator> networkCommunicator_attackers = new();
             foreach (MissionPeer? item in missionScoreboardSide_attacker.Players)
             {
@@ -113,7 +113,7 @@ public class PatchClientChangeTeam
             }
 
             List<NetworkCommunicator> networkCommunicator_defenders = new();
-            MissionScoreboardComponent.MissionScoreboardSide missionScoreboardSide_defender = missionScoreboardComponent1.GetSideSafe(TaleWorlds.Core.BattleSideEnum.Defender);
+            MissionScoreboardComponent.MissionScoreboardSide missionScoreboardSide_defender = missionScoreboardComponent1.GetSideSafe(BattleSideEnum.Defender);
             foreach (MissionPeer? item in missionScoreboardSide_defender.Players)
             {
                 NetworkCommunicator networkPeer = item.GetNetworkPeer();
@@ -174,12 +174,14 @@ public enum ESMatchType
 
 
 
-
+[HarmonyPatch(typeof(MultiplayerTeamSelectComponent), "HandleClientEventTeamChange")]
 public class MultiplayerTeamSelectComponentPatch
 {
 
     public static bool Prefix(MultiplayerTeamSelectComponent __instance, ref NetworkCommunicator peer, ref GameNetworkMessage baseMessage)
     {
+        return true;
+
         MultiplayerWarmupComponent multiplayerWarmupComponent = Mission.Current.GetMissionBehavior<MultiplayerWarmupComponent>();
         if (multiplayerWarmupComponent != null && multiplayerWarmupComponent.IsInWarmup)
         {
@@ -263,5 +265,26 @@ public class MultiplayerTeamSelectComponentPatch
         }
 
         return true;
+    }
+
+    public static void Postfix(MultiplayerTeamSelectComponent __instance, ref NetworkCommunicator peer, ref GameNetworkMessage baseMessage)
+    {
+        TeamChange teamChange = (TeamChange)baseMessage;
+        Team team = Mission.MissionNetworkHelper.GetTeamFromTeamIndex(teamChange.TeamIndex);
+
+        // 允许切旁观
+        if (team == Mission.Current.SpectatorTeam) { return; }
+
+
+        WillMatchData conWillMatchData = BLMMBehavior2.ConWillMatchData;
+        if (conWillMatchData != null && !conWillMatchData.isCancel && !conWillMatchData.isFinished)
+        {
+            string playerId = Helper.GetPlayerId(peer);
+            if(!conWillMatchData.isplayerNeedMatch(playerId))
+            {
+                __instance.ChangeTeamServer(peer, Mission.Current.SpectatorTeam);
+                Helper.SendMessageToPeer(peer, "非比赛选手禁止选队伍");
+            }
+        }
     }
 }

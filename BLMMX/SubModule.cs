@@ -34,6 +34,7 @@ public class SubModule : MBSubModuleBase
         commandHandler.RegisterCommand(new SetMapCommand());
         commandHandler.RegisterCommand(new CancelMatchCommand());
         commandHandler.RegisterCommand(new StartNewMapCommand());
+        commandHandler.RegisterCommand(new ChangeSocreCommand());
     }
 
     public override void OnMissionBehaviorInitialize(Mission mission)

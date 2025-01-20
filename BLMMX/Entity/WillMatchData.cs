@@ -33,6 +33,8 @@ public class WillMatchData
     private const int WaitTime = 180;
     [JsonIgnore]
     private static int AfterPlayerArrivadedWatingCount = 0;
+    [JsonIgnore]
+    private static bool isMatchStart = false;
 
     public int GetTeamMaxNum()
     {
@@ -116,6 +118,16 @@ public class WillMatchData
             return new KeyValuePair<bool, int>(true, WaitTime - AfterPlayerArrivadedWatingCount);
         }
         return new KeyValuePair<bool, int>(false, WaitTime - AfterPlayerArrivadedWatingCount);
+    }
+
+    public static void SetLetfTime(int leftTime)
+    {
+        AfterPlayerArrivadedWatingCount = WaitTime - leftTime;
+    }
+
+    public static int getLeftTime()
+    {
+        return WaitTime - AfterPlayerArrivadedWatingCount;
     }
 
     internal void ResetCurrentPlayerNum()

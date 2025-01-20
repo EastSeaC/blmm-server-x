@@ -21,8 +21,9 @@ public class PatchWorker
         AddPrefix(harmony, typeof(MultiplayerRoundController), "PostMatchEnd", BindingFlags.NonPublic | BindingFlags.Instance,
             typeof(PatchClientChangeTeam), nameof(PatchClientChangeTeam.PrefixOnPostMatchEnded));
 
-        AddPrefix(harmony, typeof(MultiplayerTeamSelectComponent), "HandleClientEventTeamChange", BindingFlags.NonPublic | BindingFlags.Instance, 
-            typeof(MultiplayerTeamSelectComponentPatch), nameof(MultiplayerTeamSelectComponentPatch.Prefix));
+        //AddPrefix(harmony, typeof(MultiplayerTeamSelectComponent), "HandleClientEventTeamChange", BindingFlags.NonPublic | BindingFlags.Instance, 
+        //    typeof(MultiplayerTeamSelectComponentPatch), nameof(MultiplayerTeamSelectComponentPatch.Prefix));
+
         //AddPrefix(harmony, typeof(MissionMultiplayerFlagDomination), "OnWarmupEnding", BindingFlags.NonPublic | BindingFlags.Instance,
         //    typeof(MissionMultiplayerFlagDominationPatch), nameof(MissionMultiplayerFlagDominationPatch.Postfix));
         //AddPrefix(harmony, typeof(MultiplayerRoundController), "EndRound", BindingFlags.NonPublic | BindingFlags.Instance,
