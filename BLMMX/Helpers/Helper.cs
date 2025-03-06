@@ -1,4 +1,5 @@
 ﻿using NetworkMessages.FromServer;
+using TaleWorlds.Core;
 using TaleWorlds.Library;
 using TaleWorlds.MountAndBlade;
 
@@ -58,6 +59,21 @@ namespace BLMMX.Helpers
             }
         }
 
+        public static bool HasBowOrCrossbow(this Agent agent)
+        {
+            for (EquipmentIndex equipmentIndex = EquipmentIndex.Weapon0; equipmentIndex < EquipmentIndex.NumAllWeaponSlots; equipmentIndex++)
+            {
+                if (agent.Equipment[equipmentIndex].Item != null)
+                {
+                    WeaponComponentData primaryWeapon = agent.Equipment[equipmentIndex].Item.PrimaryWeapon;
+                    if (primaryWeapon.IsBow || primaryWeapon.IsCrossBow)
+                    {
+                        return true;
+                    }
+                }
+            }
 
+            return false;
+        }
     }
 }

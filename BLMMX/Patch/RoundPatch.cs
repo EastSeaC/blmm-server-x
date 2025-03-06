@@ -2,31 +2,83 @@
 using BLMMX.Helpers;
 using HarmonyLib;
 using NetworkMessages.FromServer;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using TaleWorlds.Core;
 using TaleWorlds.MountAndBlade;
 
 namespace BLMMX.Patch;
 
+public class RoundManager
+{
+    public static bool is_second_match = false;
+
+}
+
+[HarmonyPatch(typeof(MultiplayerRoundController), "BeginNewRound")]
+public class RoundPatch2
+{
+    public static void Postfix()
+    {
+        MultiplayerRoundController roundController = Mission.Current.GetMissionBehavior<MultiplayerRoundController>();
+        if (roundController == null)
+        {
+            return;
+        }
+
+        if (roundController.CurrentRoundState == MultiplayerRoundState.Preparation && RoundManager.is_second_match)
+        {
+            MultiplayerTeamSelectComponent teamSelectComponent = Mission.Current.GetMissionBehavior<MultiplayerTeamSelectComponent>();
+            if (teamSelectComponent == null)
+            {
+                return;
+            }
+
+
+
+            //if (willMatchData.firstTeamPlayerIds.Contains(playerId))
+            //{
+            //    Helper.Print($"[es|exchange_team] {playerId} {communicator.UserName} to DefenderTeam");
+            //    teamSelectComponent.ChangeTeamServer(communicator, Mission.Current.DefenderTeam);
+            //}
+            //else if (willMatchData.secondTeamPlayerIds.Contains(playerId))
+            //{
+            //    Helper.Print($"[es|exchange_team] {playerId} {communicator.UserName} to AttackerTeam");
+            //    teamSelectComponent.ChangeTeamServer(communicator, Mission.Current.AttackerTeam);
+            //}
+        }
+    }
+}
+
+
 [HarmonyPatch(typeof(MultiplayerRoundController), "EndRound")]
 public class RoundPatch
 {
-    public static void Postfix(MultiplayerRoundController __instance)
+    public static async void Postfix()
     {
-
         MissionScoreboardComponent missionScoreboardComponent = Mission.Current.GetMissionBehavior<MissionScoreboardComponent>();
         if (missionScoreboardComponent == null)
         {
             return;
         }
-
-        int attacker_score = missionScoreboardComponent.GetRoundScore(TaleWorlds.Core.BattleSideEnum.Attacker);
-        int defender_score = missionScoreboardComponent.GetRoundScore(TaleWorlds.Core.BattleSideEnum.Defender);
-        if (attacker_score > 2 || defender_score > 2 && __instance.RoundCount >= 3 && __instance.RoundCount <5)
+        MultiplayerRoundController roundController = Mission.Current.GetMissionBehavior<MultiplayerRoundController>();
+        if (roundController == null)
         {
+            return;
+        }
+        BattleSideEnum battleSideEnum = roundController.RoundWinner;
+        if (battleSideEnum == BattleSideEnum.Attacker)
+        {
+            BLMMBehavior2.DataContainer.AddAttackWinRoundNum();
+        }
+        else
+        {
+            BLMMBehavior2.DataContainer.AddDefendWinRoundNum();
+        }
+        int attacker_score = missionScoreboardComponent.GetRoundScore(BattleSideEnum.Attacker);
+        int defender_score = missionScoreboardComponent.GetRoundScore(BattleSideEnum.Defender);
+        if ((attacker_score > 2 || defender_score > 2) && roundController.RoundCount <= 5)
+        {
+            RoundManager.is_second_match = true;
+
             MultiplayerTeamSelectComponent teamSelectComponent = Mission.Current.GetMissionBehavior<MultiplayerTeamSelectComponent>();
             if (teamSelectComponent == null)
             {
@@ -36,18 +88,7 @@ public class RoundPatch
             Helper.SendMessageToAllPeers($"第一轮结束，比分为 {attacker_score}-{defender_score}");
             WillMatchData willMatchData = BLMMBehavior2.GetWillMatchData;
 
-            foreach (NetworkCommunicator communicator in GameNetwork.NetworkPeers)
-            {
-                string playerId = Helper.GetPlayerId(communicator);
-                if (willMatchData.firstTeamPlayerIds.Contains(playerId))
-                {
-                    teamSelectComponent.ChangeTeamServer(communicator, Mission.Current.DefenderTeam);
-                }
-                else if (willMatchData.secondTeamPlayerIds.Contains(playerId))
-                {
-                    teamSelectComponent.ChangeTeamServer(communicator, Mission.Current.AttackerTeam);
-                }
-            }
+
 
             for (int i = 0; i < missionScoreboardComponent.Sides.Length; i++)
             {
@@ -62,6 +103,24 @@ public class RoundPatch
                 GameNetwork.WriteMessage(new UpdateRoundScores(0, 0));
                 GameNetwork.EndBroadcastModuleEvent(GameNetwork.EventBroadcastFlags.None, null);
             }
+
+            foreach (NetworkCommunicator communicator in GameNetwork.NetworkPeers)
+            {
+                string playerId = Helper.GetPlayerId(communicator);
+                MissionPeer missionPeer = communicator.GetComponent<MissionPeer>();
+                if (missionPeer != null)
+                {
+                    Team team = missionPeer.Team;
+
+                    if (team != null && team != Mission.Current.SpectatorTeam)
+                    {
+                        Team targetteam = team == Mission.Current.AttackerTeam ? Mission.Current.DefenderTeam : Mission.Current.AttackerTeam;
+                        teamSelectComponent.ChangeTeamServer(communicator, targetteam);
+                    }
+                }
+
+            }
+
 
         }
         //MatchManager.SetMatchState(ESMatchState.FirstMatch);

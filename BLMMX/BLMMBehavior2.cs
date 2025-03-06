@@ -9,7 +9,6 @@ using TaleWorlds.Core;
 using TaleWorlds.Library;
 using TaleWorlds.MountAndBlade;
 using TaleWorlds.MountAndBlade.Diamond;
-using TaleWorlds.PlayerServices;
 using static TaleWorlds.MountAndBlade.MultiplayerWarmupComponent;
 using Timer = TaleWorlds.Core.Timer;
 
@@ -281,7 +280,16 @@ internal class BLMMBehavior2 : MultiplayerTeamSelectComponent
             }
             else
             {
-                StatisticPlayernumber();
+                MultiplayerWarmupComponent multiplayerWarmupComponent = Mission.GetMissionBehavior<MultiplayerWarmupComponent>();
+                if (multiplayerWarmupComponent != null)
+                {
+                    WarmupStates warmupStates = (WarmupStates)ReflectionHelper.GetProperty(multiplayerWarmupComponent, "WarmupState");
+                    if (multiplayerWarmupComponent != null && warmupStates == WarmupStates.InProgress)
+                    {
+                        StatisticPlayernumber();
+                    }
+                }
+
             }
 
             if (!IsRegEvent)
@@ -367,9 +375,9 @@ internal class BLMMBehavior2 : MultiplayerTeamSelectComponent
                         else if (warmupStates == WarmupStates.InProgress)
                         {
                             //ReflectionHelper.InvokeMethod(multiplayerWarmupComponent, "EndWarmup", Array.Empty<object>());
+                            Helper.SendMessageToAllPeers("比赛开始");
                             multiplayerWarmupComponent.EndWarmupProgress();
                         }
-                        Helper.SendMessageToAllPeers("比赛开始");
                     }
                     else
                     {
@@ -415,7 +423,7 @@ internal class BLMMBehavior2 : MultiplayerTeamSelectComponent
 
         string playerId = Helper.GetPlayerId(networkPeer);
 
-        StatisticPlayernumber();
+        //StatisticPlayernumber();
     }
 
 
@@ -441,7 +449,7 @@ internal class BLMMBehavior2 : MultiplayerTeamSelectComponent
             return;
         }
 
-        StatisticPlayernumber();
+        //StatisticPlayernumber();
 
 
     }
@@ -595,7 +603,7 @@ internal class BLMMBehavior2 : MultiplayerTeamSelectComponent
     protected override void OnAgentControllerChanged(Agent agent, Agent.ControllerType oldController)
     {
         MultiplayerWarmupComponent multiplayerWarmupComponent = Mission.GetMissionBehavior<MultiplayerWarmupComponent>();
-        if (multiplayerWarmupComponent != null && multiplayerWarmupComponent.IsInWarmup)
+        if (multiplayerWarmupComponent != null && multiplayerWarmupComponent.IsInWarmup || agent == null)
         {
             return;
         }
@@ -610,7 +618,7 @@ internal class BLMMBehavior2 : MultiplayerTeamSelectComponent
             {
                 dataContainer.AddCalvary(PlayerId);
             }
-            else if (agent.HasRangedWeapon())
+            else if (agent.HasBowOrCrossbow())
             {
                 dataContainer.AddArcher(PlayerId);
             }

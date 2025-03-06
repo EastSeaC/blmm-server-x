@@ -140,6 +140,7 @@ public class PatchClientChangeTeam
             // 踢出所有人，貌似有bug会闪退，但是踢出去就不会闪退
             //KickHelper.KickList(GameNetwork.NetworkPeers);
             MatchManager.SetMatchState(ESMatchState.FirstMatch);
+            Helper.PrintError("[MatchState|Switch2FirstMatch] kick off all players");
         }
         return true;
     }
@@ -177,9 +178,14 @@ public enum ESMatchType
 [HarmonyPatch(typeof(MultiplayerTeamSelectComponent), "HandleClientEventTeamChange")]
 public class MultiplayerTeamSelectComponentPatch
 {
-
+    private static MultiplayerTeamSelectComponent multiplayerTeamSelectComponent1;
+    private static NetworkCommunicator networkCommunicator;
+    private static GameNetworkMessage gameNetworkMessage;
     public static bool Prefix(MultiplayerTeamSelectComponent __instance, ref NetworkCommunicator peer, ref GameNetworkMessage baseMessage)
     {
+        multiplayerTeamSelectComponent1 = __instance;
+        networkCommunicator = peer;
+        gameNetworkMessage = baseMessage;
         return true;
 
         MultiplayerWarmupComponent multiplayerWarmupComponent = Mission.Current.GetMissionBehavior<MultiplayerWarmupComponent>();
@@ -255,7 +261,7 @@ public class MultiplayerTeamSelectComponentPatch
         {
             if (peer != null)
             {
-                Helper.SendMessageToPeer(peer, "不可以超过 6 个人");
+                Helper.SendMessageToPeer(peer, "不可以超过 8 个人");
             }
             return false;
         }
@@ -267,9 +273,11 @@ public class MultiplayerTeamSelectComponentPatch
         return true;
     }
 
-    public static void Postfix(MultiplayerTeamSelectComponent __instance, ref NetworkCommunicator peer, ref GameNetworkMessage baseMessage)
+    public static void Postfix()
     {
-        TeamChange teamChange = (TeamChange)baseMessage;
+        MultiplayerTeamSelectComponent __instance = multiplayerTeamSelectComponent1;
+        NetworkCommunicator peer = networkCommunicator;
+        TeamChange teamChange = (TeamChange)gameNetworkMessage;
         Team team = Mission.MissionNetworkHelper.GetTeamFromTeamIndex(teamChange.TeamIndex);
 
         // 允许切旁观

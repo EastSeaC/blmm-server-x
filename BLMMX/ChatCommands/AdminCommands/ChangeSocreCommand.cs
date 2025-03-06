@@ -15,7 +15,7 @@ namespace BLMMX.ChatCommands.AdminCommands
             {
                 return false;
             }
-            if (args.StartsWith("t1"))
+            if (args.StartsWith("t1")) // 比分改为  2：2 并且轮数改为4
             {
                 MissionScoreboardComponent missionScoreboardComponent = Mission.Current.GetMissionBehavior<MissionScoreboardComponent>();
                 if (missionScoreboardComponent == null)
@@ -25,10 +25,7 @@ namespace BLMMX.ChatCommands.AdminCommands
                 for (int i = 0; i < missionScoreboardComponent.Sides.Length; i++)
                 {
                     MissionScoreboardComponent.MissionScoreboardSide? item = missionScoreboardComponent.Sides[i];
-                    if (i == 0)
-                    {
-                        item.SideScore = 2;
-                    }
+                    item.SideScore = 2;
                     missionScoreboardComponent.Sides[i] = item;
                 }
                 MultiplayerRoundController multiplayerRoundController = Mission.Current.GetMissionBehavior<MultiplayerRoundController>();
@@ -56,7 +53,6 @@ namespace BLMMX.ChatCommands.AdminCommands
             }
             else if (args.StartsWith("t3"))
             {
-
             }
             return true;
         }
