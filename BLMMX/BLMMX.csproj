@@ -6,7 +6,10 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <MB_SERVER_PATH>D:\Programs\Steam\steamapps\common\Mount &amp; Blade II Dedicated Server</MB_SERVER_PATH>
-    <AssemblyName>BLMMX</AssemblyName>
+    <BannerlordDir>
+      D:\Programs\Steam\steamapps\common\Mount &amp; Blade II Bannerlord
+    </BannerlordDir>
+      <AssemblyName>BLMMX</AssemblyName>
     <Platforms>x64</Platforms>
 
   </PropertyGroup>
@@ -18,10 +21,17 @@
       <Private>false</Private>
     </Reference>
 
+    <Reference Include="D:\Programs\steam\steamapps\common\Mount &amp; Blade II Bannerlord\bin\Win64_Shipping_Client\Newtonsoft.Json.dll">
+      <HintPath>%(Identity)</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="D:\Programs\steam\steamapps\workshop\content\261550\2878356589\bin\Win64_Shipping_Client\0Harmony.dll">
+      <HintPath>%(Identity)</HintPath>
+      <Private>false</Private>
+    </Reference>
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-    <PackageReference Include="Lib.Harmony" Version="2.3.3" />
+    <!--<PackageReference Include="Lib.Harmony" Version="2.3.3" />-->
   </ItemGroup>
 </Project>

@@ -1,4 +1,5 @@
-﻿using NetworkMessages.FromServer;
+﻿using BLMMX.Helpers;
+using NetworkMessages.FromServer;
 using TaleWorlds.MountAndBlade;
 
 namespace BLMMX.ChatCommands.AdminCommands
@@ -42,6 +43,31 @@ namespace BLMMX.ChatCommands.AdminCommands
             }
             else if (args.StartsWith("t2"))
             {
+                MissionScoreboardComponent missionScoreboardComponent = Mission.Current.GetMissionBehavior<MissionScoreboardComponent>();
+                if (missionScoreboardComponent == null)
+                {
+                    return false;
+                }
+                for (int i = 0; i < missionScoreboardComponent.Sides.Length; i++)
+                {
+                    MissionScoreboardComponent.MissionScoreboardSide? item = missionScoreboardComponent.Sides[i];
+                    item.SideScore = 2;
+                    missionScoreboardComponent.Sides[i] = item;
+                }
+                MultiplayerRoundController multiplayerRoundController = Mission.Current.GetMissionBehavior<MultiplayerRoundController>();
+                if (multiplayerRoundController == null)
+                {
+                    return false;
+                }
+                multiplayerRoundController.RoundCount = 9;
+
+                GameNetwork.BeginBroadcastModuleEvent();
+                GameNetwork.WriteMessage(new UpdateRoundScores(2, 2));
+                GameNetwork.EndBroadcastModuleEvent(GameNetwork.EventBroadcastFlags.None, null);
+                return true;
+            }
+            else if (args.StartsWith("t3"))
+            {
                 MultiplayerTeamSelectComponent teamSelectComponent = Mission.Current.GetMissionBehavior<MultiplayerTeamSelectComponent>();
                 if (teamSelectComponent == null)
                 {
@@ -51,8 +77,17 @@ namespace BLMMX.ChatCommands.AdminCommands
                 Team target_team = team == Mission.Current.AttackerTeam ? Mission.Current.DefenderTeam : Mission.Current.AttackerTeam;
                 teamSelectComponent.ChangeTeamServer(executor, target_team);
             }
-            else if (args.StartsWith("t3"))
+            else if (args.StartsWith("t4"))
             {
+                MultiplayerRoundController multiplayerRoundController = Mission.Current.GetMissionBehavior<MultiplayerRoundController>();
+                Helper.SendMessageToPeer(executor, $"RoundCount is {multiplayerRoundController.RoundCount}");
+            }
+            else if (args.StartsWith("t5"))
+            {
+                MultiplayerRoundController multiplayerRoundController = Mission.Current.GetMissionBehavior<MultiplayerRoundController>();
+                string[] argsx = args.Split(' ');
+                multiplayerRoundController.RoundCount = int.Parse(argsx[1]);
+                Helper.SendMessageToPeer(executor, $"RoundCount is {multiplayerRoundController.RoundCount}");
             }
             return true;
         }

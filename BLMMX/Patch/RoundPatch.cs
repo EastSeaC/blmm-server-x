@@ -123,6 +123,12 @@ public class RoundPatch
 
 
         }
+        else if ((attacker_score > 2 || defender_score > 2) && RoundManager.is_second_match)
+        {
+            RoundManager.is_second_match = false;
+            Helper.SendMessageToAllPeers($"第2轮结束，比分为 {attacker_score}-{defender_score}");
+            ReflectionExtensions.GetMethodInfo(roundController, "PostMatchEnd").Invoke(roundController, new object[] { });
+        }
         //MatchManager.SetMatchState(ESMatchState.FirstMatch);
         //Helper.PrintWarning("[MissionMultiplayerFlagDominationPatch]It is First");
     }
