@@ -394,7 +394,7 @@ internal class BLMMBehavior2 : MultiplayerTeamSelectComponent
 
                     if (CheckPlayerSelectPerks() && WillMatchData.getLeftTime() > 30)
                     {
-                        WillMatchData.SetLetfTime(30);
+                        WillMatchData.SetLetfTime(10);
                     }
                 }
             }
@@ -715,19 +715,27 @@ internal class BLMMBehavior2 : MultiplayerTeamSelectComponent
     {
 
         //MissionScoreboardComponent scoreboardComponent = Mission.GetMissionBehavior<MissionScoreboardComponent>();
+        MultiplayerWarmupComponent multiplayerWarmupComponent = Mission.GetMissionBehavior<MultiplayerWarmupComponent>();
+        if (multiplayerWarmupComponent != null && multiplayerWarmupComponent.IsInWarmup)
+        {
+            return;
+        }
 
-        //foreach (NetworkCommunicator item in GameNetwork.NetworkPeers)
-        //{
-        //    if (item.ControlledAgent != null)
-        //    {
-        //        MissionPeer missionPeer = item.ControlledAgent.MissionPeer;
+        // 有效，不要删掉
+        foreach (NetworkCommunicator item in GameNetwork.NetworkPeers)
+        {
+            if (item.ControlledAgent != null)
+            {
+                MissionPeer missionPeer = item.ControlledAgent.MissionPeer;
 
-        //        if (missionPeer != null)
-        //        {
-        //            dataContainer.SetKillNumber(item.VirtualPlayer.Id.ToString(), missionPeer.KillCount);
-        //        }
-        //    }
-        //}
+                if (missionPeer != null)
+                {
+                    dataContainer.SetKillNumber(item.VirtualPlayer.Id.ToString(), missionPeer.KillCount);
+                    dataContainer.SetDeathNumber(item.VirtualPlayer.Id.ToString(), missionPeer.DeathCount);
+                    dataContainer.SetAssistNumber(Helper.GetPlayerId(item), missionPeer.AssistCount);
+                }
+            }
+        }
     }
 
 

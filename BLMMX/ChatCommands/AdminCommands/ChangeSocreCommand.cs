@@ -1,5 +1,6 @@
 ﻿using BLMMX.Helpers;
 using NetworkMessages.FromServer;
+using Newtonsoft.Json;
 using TaleWorlds.MountAndBlade;
 
 namespace BLMMX.ChatCommands.AdminCommands
@@ -88,6 +89,10 @@ namespace BLMMX.ChatCommands.AdminCommands
                 string[] argsx = args.Split(' ');
                 multiplayerRoundController.RoundCount = int.Parse(argsx[1]);
                 Helper.SendMessageToPeer(executor, $"RoundCount is {multiplayerRoundController.RoundCount}");
+            }
+            else if (args.StartsWith("t6"))
+            {
+                Helper.PrintError(JsonConvert.SerializeObject(BLMMBehavior2.DataContainer));
             }
             return true;
         }

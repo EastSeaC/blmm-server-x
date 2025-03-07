@@ -59,20 +59,27 @@ public class PatchClientChangeTeam
         ////////////////////////////////////////
         Helper.Print("[es|PrefixOnPostMatchEnded] patch successfuly");
         //PlayerMatchDataContainer.TurnMatchToNorm();
+        MultiplayerRoundController multiplayerRoundController = Mission.Current.GetMissionBehavior<MultiplayerRoundController>();
         MissionScoreboardComponent missionScoreboardComponent = Mission.Current.GetMissionBehavior<MissionScoreboardComponent>();
         if (missionScoreboardComponent != null)
         {
-            MissionScoreboardComponent.MissionScoreboardSide missionScoreboardSide_attacker = missionScoreboardComponent.GetSideSafe(TaleWorlds.Core.BattleSideEnum.Attacker);
+            MissionScoreboardComponent.MissionScoreboardSide missionScoreboardSide_attacker = missionScoreboardComponent.GetSideSafe(BattleSideEnum.Attacker);
             List<string> attack_player_ids = missionScoreboardSide_attacker.Players.Select(x => x.GetNetworkPeer().VirtualPlayer.Id.ToString()).ToList();
-            BLMMBehavior2.DataContainer.SetAttackerSidePlayer(attack_player_ids);
-
-            BLMMBehavior2.DataContainer.SetAttackerSideScores(missionScoreboardSide_attacker.SideScore);
-
-            MissionScoreboardComponent.MissionScoreboardSide missionScoreboardSide_defender = missionScoreboardComponent.GetSideSafe(TaleWorlds.Core.BattleSideEnum.Defender);
+            MissionScoreboardComponent.MissionScoreboardSide missionScoreboardSide_defender = missionScoreboardComponent.GetSideSafe(BattleSideEnum.Defender);
             List<string> defend_player_ids = missionScoreboardSide_defender.Players.Select(x => x.GetNetworkPeer().VirtualPlayer.Id.ToString()).ToList();
-            BLMMBehavior2.DataContainer.SetDefenderSideScores(missionScoreboardSide_defender.SideScore);
+            BLMMBehavior2.DataContainer.SetAttackerSidePlayer(defend_player_ids);
+            BLMMBehavior2.DataContainer.SetDefebderSidePlayer(attack_player_ids);
+            //BLMMBehavior2.DataContainer.SetAttackerSideScores(missionScoreboardSide_attacker.SideScore);
+            //BLMMBehavior2.DataContainer.SetDefenderSideScores(missionScoreboardSide_defender.SideScore);
         }
 
+        Dictionary<string, object> data = new()
+        {
+            ["IsMatchEnding"] = true,
+            ["RoundCount"] = multiplayerRoundController.RoundCount,
+            ["MatchTime"] = DateTime.Now.ToString()
+        };
+        PlayerMatchDataContainer.SetTag(data);
         string result = JsonConvert.SerializeObject(BLMMBehavior2.DataContainer);
         Debug.Print(result);
         try
@@ -189,11 +196,11 @@ public class MultiplayerTeamSelectComponentPatch
         return true;
 
         MultiplayerWarmupComponent multiplayerWarmupComponent = Mission.Current.GetMissionBehavior<MultiplayerWarmupComponent>();
-        if (multiplayerWarmupComponent != null && multiplayerWarmupComponent.IsInWarmup)
-        {
-            Helper.Print("In warmup");
-            return true;
-        }
+        //if (multiplayerWarmupComponent != null && multiplayerWarmupComponent.IsInWarmup)
+        //{
+        //    Helper.Print("In warmup");
+        //    return true;
+        //}
         TeamChange teamChange = (TeamChange)baseMessage;
         Team team = Mission.MissionNetworkHelper.GetTeamFromTeamIndex(teamChange.TeamIndex);
         // 允许切旁观

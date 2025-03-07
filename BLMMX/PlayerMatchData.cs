@@ -383,6 +383,15 @@ public class PlayerMatchDataContainer
     public void AddAttackerSideScores(int score = 1)
     {
         AttackRound += score;
+        foreach (string k in AttackPlayerIds)
+        {
+            bool v = _players.TryGetValue(k, out PlayerMatchData playerMatchData);
+            if (v && playerMatchData != null)
+            {
+                playerMatchData.Win_rounds += score;
+                _players[k] = playerMatchData;
+            }
+        }
         Helper.PrintError($"cur attack round score is {AttackRound}");
     }
 
@@ -397,13 +406,40 @@ public class PlayerMatchDataContainer
             if (v && playerMatchData != null)
             {
                 playerMatchData.Win_rounds = sideScore;
+                _players[k] = playerMatchData;
             }
         }
     }
 
+
     public void SetDefenderSideScores(int sideScore)
     {
         DefendRound = sideScore;
+
+        foreach (string k in AttackPlayerIds)
+        {
+            bool v = _players.TryGetValue(k, out PlayerMatchData playerMatchData);
+            if (v && playerMatchData != null)
+            {
+                playerMatchData.Win_rounds = sideScore;
+                _players[k] = playerMatchData;
+            }
+        }
+    }
+
+    public void AddDefenderSideScores(int sideScore)
+    {
+        DefendRound += sideScore;
+
+        foreach (string k in AttackPlayerIds)
+        {
+            bool v = _players.TryGetValue(k, out PlayerMatchData playerMatchData);
+            if (v && playerMatchData != null)
+            {
+                playerMatchData.Win_rounds += sideScore;
+                _players[k] = playerMatchData;
+            }
+        }
     }
 
     public void AddWinRound(string playerId)
@@ -495,6 +531,15 @@ public class PlayerMatchDataContainer
                 _players[playerId] = playerMatchData;
             }
         }
+    }
+
+    internal void SetDefebderSidePlayer(List<string> attack_player_ids)
+    {
+        foreach (var i in attack_player_ids)
+        {
+            DefendPlayerIds.Add(i);
+        }
+        Helper.Print("[SetDefebderSidePlayer] success");
     }
 
     public class PlayerMatchData

@@ -2,6 +2,7 @@
 using BLMMX.Helpers;
 using HarmonyLib;
 using NetworkMessages.FromServer;
+using Newtonsoft.Json;
 using TaleWorlds.Core;
 using TaleWorlds.MountAndBlade;
 
@@ -87,7 +88,12 @@ public class RoundPatch
 
             Helper.SendMessageToAllPeers($"第一轮结束，比分为 {attacker_score}-{defender_score}");
             WillMatchData willMatchData = BLMMBehavior2.GetWillMatchData;
-
+            // 根据比赛队伍名单，给予分数
+            if (willMatchData != null)
+            {
+                BLMMBehavior2.DataContainer.SetAttackerSideScores(attacker_score);
+                BLMMBehavior2.DataContainer.SetDefenderSideScores(defender_score);
+            }
 
 
             for (int i = 0; i < missionScoreboardComponent.Sides.Length; i++)
@@ -127,6 +133,14 @@ public class RoundPatch
         {
             RoundManager.is_second_match = false;
             Helper.SendMessageToAllPeers($"第2轮结束，比分为 {attacker_score}-{defender_score}");
+            WillMatchData willMatchData = BLMMBehavior2.GetWillMatchData;
+            // 根据比赛队伍名单，给予分数
+            if (willMatchData != null)
+            {
+                BLMMBehavior2.DataContainer.AddDefenderSideScores(attacker_score);
+                BLMMBehavior2.DataContainer.AddAttackerSideScores(defender_score);
+            }
+            Helper.PrintWarning("[MissionMultiplayerFlagDominationPatch]" + JsonConvert.SerializeObject(BLMMBehavior2.DataContainer));
             ReflectionExtensions.GetMethodInfo(roundController, "PostMatchEnd").Invoke(roundController, new object[] { });
         }
         //MatchManager.SetMatchState(ESMatchState.FirstMatch);
