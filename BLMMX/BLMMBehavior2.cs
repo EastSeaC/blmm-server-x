@@ -43,9 +43,9 @@ internal class BLMMBehavior2 : MultiplayerTeamSelectComponent
         willMatchData.cancelReason = reason;
 
         string server_name = dataContainer.GetServername();
-        string match_id= ConWillMatchData.matchId;
+        string match_id = ConWillMatchData.matchId;
         //await ("http://localhost:14725/cancel-match/server_name/match_id");
-        await NetUtil.Get($"/cancel-match/{server_name}/{match_id}", new JsonObject(),(res) =>
+        await NetUtil.Get($"/cancel-match/{server_name}/{match_id}", new JsonObject(), (res) =>
         {
             if (res.IsEmpty())
             {
@@ -218,9 +218,6 @@ internal class BLMMBehavior2 : MultiplayerTeamSelectComponent
             if (willMatchData.isplayerNeedMatch(playerId))
             {
                 willMatchData.OffSetCurrentPlayerNumber(+1);
-
-
-
             }
         }
         Helper.SendMessageToAllPeers($"当前到场人数 {willMatchData.CurrentPlayerNumber}/{willMatchData.GetTotalNumber()}");
@@ -364,7 +361,7 @@ internal class BLMMBehavior2 : MultiplayerTeamSelectComponent
                 return;
             }
             MultiplayerWarmupComponent multiplayerWarmupComponent = Mission.GetMissionBehavior<MultiplayerWarmupComponent>();
-            if (multiplayerWarmupComponent != null && multiplayerWarmupComponent.IsInWarmup)
+            if (multiplayerWarmupComponent != null && multiplayerWarmupComponent.IsInWarmup && willMatchData.CurrentPlayerNumber > 0)
             {
                 KeyValuePair<bool, int> keyValuePair = WillMatchData.addConount();
 
