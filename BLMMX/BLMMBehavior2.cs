@@ -399,64 +399,49 @@ internal class BLMMBehavior2 : MultiplayerTeamSelectComponent
                         WillMatchData.SetLetfTime(10);
                     }
                 }
+
+                MultiplayerTeamSelectComponent multiplayerTeamSelectComponent = Mission.GetMissionBehavior<MultiplayerTeamSelectComponent>();
+                MissionScoreboardComponent missionScoreboardComponent = Mission.GetMissionBehavior<MissionScoreboardComponent>();
+                if (multiplayerTeamSelectComponent != null && missionScoreboardComponent != null)
+                {
+                    foreach (NetworkCommunicator item in GameNetwork.NetworkPeers)
+                    {
+                        if (item != null)
+                        {
+                            MissionPeer missionPeer = item.GetComponent<MissionPeer>();
+                            if (missionPeer == null)
+                            {
+                                continue;
+                            }
+                            string playerId = Helper.GetPlayerId(item);
+                            if (ConWillMatchData.firstTeamPlayerIds.Contains(playerId))
+                            {
+                                if (!missionScoreboardComponent.Sides[0].Players.Contains(missionPeer))
+                                    multiplayerTeamSelectComponent.ChangeTeamServer(item, Mission.Current.AttackerTeam);
+                            }
+                            else if (ConWillMatchData.secondTeamPlayerIds.Contains(playerId))
+                            {
+                                if (!missionScoreboardComponent.Sides[1].Players.Contains(missionPeer))
+                                    multiplayerTeamSelectComponent.ChangeTeamServer(item, Mission.Current.DefenderTeam);
+                            }
+                            else
+                            {
+                                MissionPeer component = item.GetComponent<MissionPeer>();
+                                if (component.Team != Mission.Current.SpectatorTeam)
+                                {
+                                    multiplayerTeamSelectComponent.ChangeTeamServer(item, Mission.Current.SpectatorTeam);
+                                }
+                            }
+                        }
+                    }
+                }
             }
             //Helper.PrintError("[ES]ddd");
             else
             {
                 //Helper.PrintError("[ES]ddd");
-                MultiplayerTeamSelectComponent multiplayerTeamSelectComponent = Mission.GetMissionBehavior<MultiplayerTeamSelectComponent>();
-                MissionScoreboardComponent missionScoreboardComponent = Mission.GetMissionBehavior<MissionScoreboardComponent>();
-                if (multiplayerTeamSelectComponent != null && missionScoreboardComponent != null)
-                {
-                    if (ConWillMatchData != null && !ConWillMatchData.isCancel && !ConWillMatchData.isFinished)
-                    {
-                        var attacker_side = missionScoreboardComponent.GetSideSafe(BattleSideEnum.Attacker);
-                        foreach (MissionPeer? item in attacker_side.Players)
-                        {
-                            if (item != null)
-                            {
-                                string playerId = Helper.GetPlayerId(item.GetNetworkPeer());
-                                if (!ConWillMatchData.firstTeamPlayerIds.Contains(playerId))
-                                {
-                                    if (ConWillMatchData.secondTeamPlayerIds.Contains(playerId))
-                                    {
-                                        multiplayerTeamSelectComponent.ChangeTeamServer(item.GetNetworkPeer(), Mission.Current.DefenderTeam);
-                                    }
-                                    else
-                                    {
-                                        multiplayerTeamSelectComponent.ChangeTeamServer(item.GetNetworkPeer(), Mission.Current.SpectatorTeam);
-                                    }
-                                }
-                                else if (!ConWillMatchData.secondTeamPlayerIds.Contains(playerId))
-                                {
-                                    if (ConWillMatchData.firstTeamPlayerIds.Contains(playerId))
-                                    {
-                                        multiplayerTeamSelectComponent.ChangeTeamServer(item.GetNetworkPeer(), Mission.Current.AttackerTeam);
-                                    }
-                                    else
-                                    {
-                                        multiplayerTeamSelectComponent.ChangeTeamServer(item.GetNetworkPeer(), Mission.Current.SpectatorTeam);
-                                    }
-                                }
 
-                                /// 匹配列表
-                                //try
-                                //{
-                                //    string result = await HttpHelper.DownloadStringTaskAsync(WebUrlManager.GetMatchList);
-                                //    if (result != null)
-                                //    {
-                                //        Dictionary<string, string> d = new();
-                                //    }
 
-                                //}
-                                //catch (Exception ex) { }
-                                //string result = JsonConvert.SerializeObject(dataContainer, Formatting.Indented);
-                                // 刷新数据
-                                //Debug.Print(result);
-                            }
-                        }
-                    }
-                }
             }
         }
     }
