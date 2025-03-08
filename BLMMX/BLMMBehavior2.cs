@@ -5,6 +5,8 @@ using BLMMX.MatchTable;
 using BLMMX.util;
 using BLMMX.Util;
 using Newtonsoft.Json;
+using System.ComponentModel.Design;
+using System.Text.Json.Nodes;
 using TaleWorlds.Core;
 using TaleWorlds.Library;
 using TaleWorlds.MountAndBlade;
@@ -40,8 +42,10 @@ internal class BLMMBehavior2 : MultiplayerTeamSelectComponent
         willMatchData.isCancel = true;
         willMatchData.cancelReason = reason;
 
-
-        await NetUtil.GetAsync("/cancel-match", (res) =>
+        string server_name = dataContainer.GetServername();
+        string match_id= ConWillMatchData.matchId;
+        //await ("http://localhost:14725/cancel-match/server_name/match_id");
+        await NetUtil.Get($"/cancel-match/{server_name}/{match_id}", new JsonObject(),(res) =>
         {
             if (res.IsEmpty())
             {
@@ -63,10 +67,11 @@ internal class BLMMBehavior2 : MultiplayerTeamSelectComponent
             }
         }, (e) =>
         {
-
+            Helper.PrintError(e.Message);
+            Helper.PrintError(e.StackTrace);
         });
         await Task.Delay(3000);
-        //KickHelper.KickList(GameNetwork.NetworkPeers);
+        KickHelper.KickList(GameNetwork.NetworkPeers);
         //HttpHelper.DownloadStringTaskAsync()
     }
 
@@ -399,21 +404,63 @@ internal class BLMMBehavior2 : MultiplayerTeamSelectComponent
                 }
             }
             //Helper.PrintError("[ES]ddd");
+            else
+            {
+                //Helper.PrintError("[ES]ddd");
+                MultiplayerTeamSelectComponent multiplayerTeamSelectComponent = Mission.GetMissionBehavior<MultiplayerTeamSelectComponent>();
+                MissionScoreboardComponent missionScoreboardComponent = Mission.GetMissionBehavior<MissionScoreboardComponent>();
+                if (multiplayerTeamSelectComponent != null && missionScoreboardComponent != null)
+                {
+                    if (ConWillMatchData != null && !ConWillMatchData.isCancel && !ConWillMatchData.isFinished)
+                    {
+                        var attacker_side = missionScoreboardComponent.GetSideSafe(BattleSideEnum.Attacker);
+                        foreach (MissionPeer? item in attacker_side.Players)
+                        {
+                            if (item != null)
+                            {
+                                string playerId = Helper.GetPlayerId(item.GetNetworkPeer());
+                                if (!ConWillMatchData.firstTeamPlayerIds.Contains(playerId))
+                                {
+                                    if (ConWillMatchData.secondTeamPlayerIds.Contains(playerId))
+                                    {
+                                        multiplayerTeamSelectComponent.ChangeTeamServer(item.GetNetworkPeer(), Mission.Current.DefenderTeam);
+                                    }
+                                    else
+                                    {
+                                        multiplayerTeamSelectComponent.ChangeTeamServer(item.GetNetworkPeer(), Mission.Current.SpectatorTeam);
+                                    }
+                                }
+                                else if (!ConWillMatchData.secondTeamPlayerIds.Contains(playerId))
+                                {
+                                    if (ConWillMatchData.firstTeamPlayerIds.Contains(playerId))
+                                    {
+                                        multiplayerTeamSelectComponent.ChangeTeamServer(item.GetNetworkPeer(), Mission.Current.AttackerTeam);
+                                    }
+                                    else
+                                    {
+                                        multiplayerTeamSelectComponent.ChangeTeamServer(item.GetNetworkPeer(), Mission.Current.SpectatorTeam);
+                                    }
+                                }
 
-            /// 匹配列表
-            //try
-            //{
-            //    string result = await HttpHelper.DownloadStringTaskAsync(WebUrlManager.GetMatchList);
-            //    if (result != null)
-            //    {
-            //        Dictionary<string, string> d = new();
-            //    }
+                                /// 匹配列表
+                                //try
+                                //{
+                                //    string result = await HttpHelper.DownloadStringTaskAsync(WebUrlManager.GetMatchList);
+                                //    if (result != null)
+                                //    {
+                                //        Dictionary<string, string> d = new();
+                                //    }
 
-            //}
-            //catch (Exception ex) { }
-            //string result = JsonConvert.SerializeObject(dataContainer, Formatting.Indented);
-            // 刷新数据
-            //Debug.Print(result);
+                                //}
+                                //catch (Exception ex) { }
+                                //string result = JsonConvert.SerializeObject(dataContainer, Formatting.Indented);
+                                // 刷新数据
+                                //Debug.Print(result);
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 

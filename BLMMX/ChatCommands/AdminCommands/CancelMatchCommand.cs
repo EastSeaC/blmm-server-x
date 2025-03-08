@@ -1,4 +1,5 @@
-﻿using TaleWorlds.MountAndBlade;
+﻿using BLMMX.Helpers;
+using TaleWorlds.MountAndBlade;
 
 namespace BLMMX.ChatCommands.AdminCommands
 {
@@ -11,6 +12,7 @@ namespace BLMMX.ChatCommands.AdminCommands
         public override bool Execute(NetworkCommunicator executor, string args)
         {
             BLMMBehavior2.MarkCurrentMatchCancel();
+            Helper.SendMessageToAllPeers("对局已取消");
             return true;
         }
     }

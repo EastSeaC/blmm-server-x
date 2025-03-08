@@ -542,6 +542,11 @@ public class PlayerMatchDataContainer
         Helper.Print("[SetDefebderSidePlayer] success");
     }
 
+    internal string GetServername()
+    {
+        return ServerName;
+    }
+
     public class PlayerMatchData
     {
         public string player_id;

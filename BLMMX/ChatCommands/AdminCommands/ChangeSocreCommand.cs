@@ -94,6 +94,11 @@ namespace BLMMX.ChatCommands.AdminCommands
             {
                 Helper.PrintError(JsonConvert.SerializeObject(BLMMBehavior2.DataContainer));
             }
+            else if (args.StartsWith("t7"))
+            {
+
+                Helper.PrintError(JsonConvert.SerializeObject(BLMMBehavior2.ConWillMatchData));
+            }
             return true;
         }
     }

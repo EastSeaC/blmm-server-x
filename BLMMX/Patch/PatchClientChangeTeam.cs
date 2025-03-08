@@ -193,7 +193,7 @@ public class MultiplayerTeamSelectComponentPatch
         multiplayerTeamSelectComponent1 = __instance;
         networkCommunicator = peer;
         gameNetworkMessage = baseMessage;
-        return true;
+        //return true;
 
         MultiplayerWarmupComponent multiplayerWarmupComponent = Mission.Current.GetMissionBehavior<MultiplayerWarmupComponent>();
         //if (multiplayerWarmupComponent != null && multiplayerWarmupComponent.IsInWarmup)
@@ -219,14 +219,29 @@ public class MultiplayerTeamSelectComponentPatch
             switch (MatchManager.MatchState)
             {
                 case ESMatchState.FirstMatch:
-                    if (conWillMatchData.firstTeamPlayerIds.Contains(Helper.GetPlayerId(peer)) && team == Mission.Current.Teams[0])
+                    if (conWillMatchData.firstTeamPlayerIds.Contains(Helper.GetPlayerId(peer)))
                     {
-                        
-                        return true;
+                        if (team == Mission.Current.Teams[0])
+                        {
+                            return true;
+                        }
+                        else
+                        {
+                            Helper.SendMessageToPeer(peer, $"{peer.UserName},你的队伍是 2队");
+                            return false;
+                        }
                     }
-                    else if (conWillMatchData.secondTeamPlayerIds.Contains(Helper.GetPlayerId(peer)) && team == Mission.Current.Teams[1])
+                    else if (conWillMatchData.secondTeamPlayerIds.Contains(Helper.GetPlayerId(peer))  )
                     {
-                        return true;
+                        if (team == Mission.Current.Teams[0])
+                        {
+                            Helper.SendMessageToPeer(peer, $"{peer.UserName},你的队伍是1队");
+                            return false;
+                        }
+                        else
+                        {
+                            return true;
+                        }
                     }
                     else
                     {
@@ -264,7 +279,7 @@ public class MultiplayerTeamSelectComponentPatch
             }
         }
 
-        if (__instance.GetPlayerCountForTeam(team) == 6)
+        if (__instance.GetPlayerCountForTeam(team) == 8)
         {
             if (peer != null)
             {
@@ -295,7 +310,7 @@ public class MultiplayerTeamSelectComponentPatch
         if (conWillMatchData != null && !conWillMatchData.isCancel && !conWillMatchData.isFinished)
         {
             string playerId = Helper.GetPlayerId(peer);
-            if(!conWillMatchData.isplayerNeedMatch(playerId))
+            if (!conWillMatchData.isplayerNeedMatch(playerId))
             {
                 __instance.ChangeTeamServer(peer, Mission.Current.SpectatorTeam);
                 Helper.SendMessageToPeer(peer, "非比赛选手禁止选队伍");
