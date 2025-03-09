@@ -394,7 +394,7 @@ internal class BLMMBehavior2 : MultiplayerTeamSelectComponent
                         Helper.SendMessageToAllPeers($"剩余时间:{keyValuePair.Value} 当前人数{willMatchData.CurrentPlayerNumber}/{willMatchData.GetTotalNumber()}");
                     }
 
-                    if (CheckPlayerSelectPerks() && WillMatchData.getLeftTime() > 30)
+                    if (CheckPlayerSelectPerks() && ConWillMatchData.isPlayerArrived() && WillMatchData.getLeftTime() > 30)
                     {
                         WillMatchData.SetLetfTime(10);
                     }

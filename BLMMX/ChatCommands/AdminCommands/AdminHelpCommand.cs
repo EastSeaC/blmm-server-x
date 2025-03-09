@@ -1,4 +1,5 @@
-﻿using System;
+﻿using BLMMX.Helpers;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -15,7 +16,8 @@ namespace BLMMX.ChatCommands.AdminCommands
 
         public override bool Execute(NetworkCommunicator executor, string args)
         {
-
+            Helper.SendMessageToPeer(executor, new ChangeSocreCommand().Description);
+            return true;
         }
     }
 }
