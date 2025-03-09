@@ -9,7 +9,9 @@ namespace BLMMX.ChatCommands.AdminCommands
     {
         public override string CommandText => "cs";
 
-        public override string Description => "修改分数，使用模式 !cs 1";
+        public override string Description => "修改第一轮比赛分数，使用模式 !cs 1， 将把轮数修改为4，并且两边都是2：2"
+            + "\n使用！cs t2。将把轮数修改为9，并且两边都是2：2，需要等自动换边执行后再使用";
+
 
         public override bool Execute(NetworkCommunicator executor, string args)
         {
@@ -92,12 +94,15 @@ namespace BLMMX.ChatCommands.AdminCommands
             }
             else if (args.StartsWith("t6"))
             {
-                Helper.PrintError(JsonConvert.SerializeObject(BLMMBehavior2.DataContainer));
+                string message = JsonConvert.SerializeObject(BLMMBehavior2.DataContainer);
+                Helper.SendMessageToPeer(executor, message);
+                Helper.PrintError(message);
             }
             else if (args.StartsWith("t7"))
             {
-
-                Helper.PrintError(JsonConvert.SerializeObject(BLMMBehavior2.ConWillMatchData));
+                string message = JsonConvert.SerializeObject(BLMMBehavior2.ConWillMatchData);
+                Helper.SendMessageToPeer(executor, message);
+                Helper.PrintError(message);
             }
             return true;
         }

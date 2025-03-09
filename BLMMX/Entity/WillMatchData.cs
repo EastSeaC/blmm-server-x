@@ -1,8 +1,6 @@
 ﻿using BLMMX.Helpers;
 using BLMMX.Patch;
-using Microsoft.VisualBasic;
 using Newtonsoft.Json;
-using System.IO;
 
 namespace BLMMX.Entity;
 
@@ -30,7 +28,7 @@ public class WillMatchData
     public ESMatchType MatchType { get; set; }
 
     [JsonIgnore]
-    private const int WaitTime = 180;
+    private const int WaitTime = 380;
     [JsonIgnore]
     private static int AfterPlayerArrivadedWatingCount = 0;
     [JsonIgnore]
@@ -63,6 +61,12 @@ public class WillMatchData
     {
         currentplayerNumber += off;
         currentplayerNumber = Math.Clamp(currentplayerNumber,0, GetTotalNumber());
+    }
+
+    public void SetCurrentPlayerNumber(int num)
+    {
+        currentplayerNumber = num;
+        Helper.PrintError($"SetCurrentPlayerNumber to {num}");
     }
 
     public EMatchConfig MatchConfig { get; set; }

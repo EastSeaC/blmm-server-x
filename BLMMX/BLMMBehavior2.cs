@@ -680,7 +680,7 @@ internal class BLMMBehavior2 : MultiplayerTeamSelectComponent
             if (affectorAgent.IsHuman && affectorAgent.IsPlayerControlled)
             {
                 string affectorPlayerId = Helper.GetPlayerId(affectorAgent);
-
+                string affectorPlayerName = affectedAgent.Name;
                 if (affectorAgent.Team.IsEnemyOf(affectedAgent.Team))
                 {
                     KeyValuePair<bool, int> k = dataContainer.AddKillRecord(affectorPlayerId, affectedPlayerId);
@@ -689,28 +689,28 @@ internal class BLMMBehavior2 : MultiplayerTeamSelectComponent
                         switch (k.Value)
                         {
                             case 2:
-                                Helper.SendMessageToAllPeers($"玩家 {affectedPlayerName} {k.Value} 连杀");
+                                Helper.SendMessageToAllPeers($"玩家 {affectorPlayerName} {k.Value} 连杀");
                                 break;
                             case 3:
                             case 4:
-                                Helper.SendMessageToAllPeers($"玩家 {affectedPlayerName} {k.Value} 连杀");
-                                Helper.SendMessageToAllPeers($"玩家 {affectedPlayerName} {k.Value} 连杀");
+                                Helper.SendMessageToAllPeers($"玩家 {affectorPlayerName} {k.Value} 连杀");
+                                Helper.SendMessageToAllPeers($"玩家 {affectorPlayerName} {k.Value} 连杀");
                                 break;
                             case 5:
                             case 6:
-                                Helper.SendMessageToAllPeers($"玩家 {affectedPlayerName} {k.Value} 连杀");
-                                Helper.SendMessageToAllPeers($"玩家 {affectedPlayerName} {k.Value} 连杀");
-                                Helper.SendMessageToAllPeers($"玩家 {affectedPlayerName} {k.Value} 连杀");
+                                Helper.SendMessageToAllPeers($"玩家 {affectorPlayerName} {k.Value} 连杀");
+                                Helper.SendMessageToAllPeers($"玩家 {affectorPlayerName} {k.Value} 连杀");
+                                Helper.SendMessageToAllPeers($"玩家 {affectorPlayerName} {k.Value} 连杀");
                                 break;
                             case 7:
                             case 8:
-                                Helper.SendMessageToAllPeers($"玩家 {affectedPlayerName} {k.Value} 已超神");
-                                Helper.SendMessageToAllPeers($"玩家 {affectedPlayerName} {k.Value} 已超神");
-                                Helper.SendMessageToAllPeers($"玩家 {affectedPlayerName} {k.Value} 已超神");
+                                Helper.SendMessageToAllPeers($"玩家 {affectorPlayerName} {k.Value} 连杀,已超神");
+                                Helper.SendMessageToAllPeers($"玩家 {affectorPlayerName} {k.Value} 连杀,已超神");
+                                Helper.SendMessageToAllPeers($"玩家 {affectorPlayerName} {k.Value} 连杀,已超神");
                                 break;
                             case 9:
-                                Helper.SendMessageToAllPeers($"玩家 {affectedPlayerName} {k.Value} 已杀穿对面");
-                                Helper.SendMessageToAllPeers($"玩家 {affectedPlayerName} {k.Value} 已杀穿对面");
+                                Helper.SendMessageToAllPeers($"玩家 {affectorPlayerName} {k.Value} 连杀,已杀穿对面");
+                                Helper.SendMessageToAllPeers($"玩家 {affectorPlayerName} {k.Value} 连杀,已杀穿对面");
                                 break;
                         }
                     }
