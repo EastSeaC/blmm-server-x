@@ -7,28 +7,50 @@ using System.Net.NetworkInformation;
 
 public class Program
 {
+    public static  void MainX(string[] args)
+    {
+        WillMatchData willMatchData;
+        string serverName = "CN_BTL_NINGBO_6-222";
+         NetUtil.Get("/get-match-obj/" + serverName, new System.Text.Json.Nodes.JsonObject(),(res) =>
+        {
+            EWebResponse? eWebResponse = JsonConvert.DeserializeObject<EWebResponse>(res);
+            if (eWebResponse != null)
+            {
+                if (eWebResponse.code == -1)
+                {
+                    Helper.PrintWarning($"[es|get-match-obj] {eWebResponse.Message}");
+                }
+                else
+                {
+                    //Console.WriteLine(eWebResponse.data);
+                    WillMatchData? willMatch = JsonConvert.DeserializeObject<WillMatchData>(eWebResponse.data.ToString());
+                    if (willMatch == null)
+                    {
+                        Helper.PrintError("[es|get-match-obj] data is null");
+                        return;
+                    }
+
+                    willMatchData = willMatch;
+                    Helper.Print($"[es|get-match-obj-info] {willMatch.MatchType} {willMatch.matchId}");
+                    Helper.SendMessageToAllPeers("成功读取匹配数据");
+                    //Console.WriteLine(willMatch.isCancel);
+                    //Console.WriteLine(willMatch.firstTeamCultrue);
+                    //foreach (string item in willMatch.secondTeamPlayerIds)
+                    //{
+                    //    Console.WriteLine(item);
+                    //}
+                }
+            }
+        }, (e) =>
+        {
+            Helper.Print("[es|get-match-obj] error");
+            Helper.Print(e.Message);
+            Helper.Print(e.StackTrace);
+        });
+    }
     public static void Main(string[] args)
     {
-        // 你想要 ping 的 IP 地址
-        string ipAddress = "47.251.43.74"; // 例：Google的公共DNS服务器
-
-        Ping pingSender = new Ping(); // 创建一个 Ping 对象
-        try
-        {
-            PingReply reply = pingSender.Send(ipAddress); // 发送 ping 请求
-            if (reply.Status == IPStatus.Success) // 如果成功
-            {
-                Console.WriteLine($"Ping 成功: {reply.Address} - RTT = {reply.RoundtripTime}ms");
-            }
-            else
-            {
-                Console.WriteLine($"Ping 失败: {reply.Status}");
-            }
-        }
-        catch (PingException ex)
-        {
-            Console.WriteLine($"Ping 过程中出现错误: {ex.Message}");
-        }
+        MainX(args);
     }
     public static async Task Mainex3(string[] args)
     {
@@ -74,7 +96,7 @@ public class Program
                     Console.WriteLine(e.StackTrace);
                 });
     }
-    public static async Task Main2(string[] args)
+    public static async Task Main3(string[] args)
     {
         PlayerMatchDataContainer playerMatchDataContainer = new PlayerMatchDataContainer();
         KeyValuePair<bool, int> k = playerMatchDataContainer.AddKillRecord("1231", "123");

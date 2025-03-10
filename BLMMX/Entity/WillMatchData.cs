@@ -1,6 +1,7 @@
 ﻿using BLMMX.Helpers;
 using BLMMX.Patch;
 using Newtonsoft.Json;
+using TaleWorlds.MountAndBlade;
 
 namespace BLMMX.Entity;
 
@@ -72,7 +73,12 @@ public class WillMatchData
     public EMatchConfig MatchConfig { get; set; }
 
     public bool isCancel;
-    public string matchId;
+
+    [JsonProperty("match_id")]
+    public string FullMatchId { get; set; }
+
+    [JsonProperty("match_id_2")]
+    public string matchId { get; set; }
     public string ServerName;
     public bool isFinished;
     internal object cancelReason;
@@ -98,6 +104,16 @@ public class WillMatchData
     internal bool isplayerNeedMatch(string playerId)
     {
         return firstTeamPlayerIds.Contains(playerId) || secondTeamPlayerIds.Contains(playerId);
+    }
+
+    internal bool isPlayerInFirstTeam(string playerId)
+    {
+        return firstTeamPlayerIds.Contains(playerId);
+    }
+
+    internal bool isPlayerInSecondTeam(string playerId)
+    {
+        return secondTeamPlayerIds.Contains(playerId);
     }
 
     internal bool isPlayerArrived()
@@ -137,6 +153,24 @@ public class WillMatchData
     internal void ResetCurrentPlayerNum()
     {
         currentplayerNumber = 0;
+    }
+
+    internal string GetPlayerInfo(NetworkCommunicator networkPeer)
+    {
+        string player_id = Helper.GetPlayerId(networkPeer);
+
+        if (firstTeamPlayerIds.Contains(player_id))
+        {
+            return $"{networkPeer.UserName} 是 队伍A {MultiplayerOptions.OptionType.CultureTeam1.GetStrValue()}";
+        }
+        else if (secondTeamPlayerIds.Contains(player_id))
+        {
+            return $"{player_id} 是队伍B {MultiplayerOptions.OptionType.CultureTeam1.GetStrValue()} ";
+        }
+        else
+        {
+            return "";
+        }
     }
 
     public class EMatchConfig

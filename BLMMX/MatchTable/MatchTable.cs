@@ -11,9 +11,3 @@ internal class MatchTable
 /// <summary>
 /// MatchManager 用于快速判定，也就是和网页端通信时直接搞定
 /// </summary>
-public class MatchManager
-{
-    public static List<string> TotalPlayerIds;
-    public static List<string> AttackPlayerIds;
-    public static List<string> DefendPlayerIds;
-}

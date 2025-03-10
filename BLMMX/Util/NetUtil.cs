@@ -1,4 +1,5 @@
-﻿using System.Net;
+﻿using BLMMX.Helpers;
+using System.Net;
 using System.Text;
 using System.Text.Json.Nodes;
 using System.Web;
@@ -7,8 +8,8 @@ namespace BLMMX.Util;
 
 public class NetUtil
 {
-    //private static string ServerIP = "110.42.98.67:14725";
-    private static string ServerIP = "localhost:14725";
+    private static string ServerIP = "110.42.109.140:14725";
+    //private static string ServerIP = "localhost:14725";
 
 
     private static HttpClient sharedClient = new()
@@ -77,17 +78,20 @@ public class NetUtil
         {
             try
             {
-                string url = ServerIP + route;
+                string url = $"http://{ServerIP}/" + route;
 
                 List<string> param = new();
 
-                foreach (KeyValuePair<string, JsonNode?> kv in json)
+                if (json.Count > 0)
                 {
-                    param.Add(HttpUtility.UrlEncode(kv.Key) + "=" + HttpUtility.UrlEncode(kv.Value.ToString()));
+                    foreach (KeyValuePair<string, JsonNode?> kv in json)
+                    {
+                        param.Add(HttpUtility.UrlEncode(kv.Key) + "=" + HttpUtility.UrlEncode(kv.Value.ToString()));
+                    }
+                    if (param.Count > 0)
+                        url += "?" + string.Join("&", param);
                 }
-                if (param.Count > 0)
-                    url += "?" + string.Join("&", param);
-
+                Helper.Print(url);
                 HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
                 request.Method = "GET";
                 request.UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36";

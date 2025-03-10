@@ -75,8 +75,9 @@ public class PatchClientChangeTeam
 
         Dictionary<string, object> data = new()
         {
+            ["MatchId"] = BLMMBehavior2.ConWillMatchData.matchId,
             ["IsMatchEnding"] = true,
-            ["RoundCount"] = multiplayerRoundController.RoundCount,
+            ["RoundCount"] = multiplayerRoundController.RoundCount + 1,
             ["MatchTime"] = DateTime.Now.ToString()
         };
         PlayerMatchDataContainer.SetTag(data);
@@ -110,13 +111,17 @@ public class PatchClientChangeTeam
             missionScoreboardComponent1.ChangeTeamScore(Mission.Current.Teams.Defender, 0);
             MultiplayerTeamSelectComponent multiplayerTeamSelectComponent = Mission.Current.GetMissionBehavior<MultiplayerTeamSelectComponent>();
 
-            MissionScoreboardComponent.MissionScoreboardSide missionScoreboardSide_attacker = missionScoreboardComponent1.GetSideSafe(BattleSideEnum.Attacker);
+            MissionScoreboardComponent.MissionScoreboardSide missionScoreboardSide_attacker = missionScoreboardComponent1.Sides[0];
             List<NetworkCommunicator> networkCommunicator_attackers = new();
-            foreach (MissionPeer? item in missionScoreboardSide_attacker.Players)
+            if (missionScoreboardSide_attacker != null)
             {
-                NetworkCommunicator networkPeer = item.GetNetworkPeer();
-                networkCommunicator_attackers.Add(networkPeer);
-                multiplayerTeamSelectComponent.ChangeTeamServer(networkPeer, Mission.Current.SpectatorTeam);
+                foreach (MissionPeer item in missionScoreboardSide_attacker.Players)
+                {
+                    if (item == null) { continue; }
+                    NetworkCommunicator networkPeer = item.GetNetworkPeer();
+                    networkCommunicator_attackers.Add(networkPeer);
+                    multiplayerTeamSelectComponent.ChangeTeamServer(networkPeer, Mission.Current.SpectatorTeam);
+                }
             }
 
             List<NetworkCommunicator> networkCommunicator_defenders = new();
@@ -146,8 +151,14 @@ public class PatchClientChangeTeam
         {
             // 踢出所有人，貌似有bug会闪退，但是踢出去就不会闪退
             //KickHelper.KickList(GameNetwork.NetworkPeers);
-            MatchManager.SetMatchState(ESMatchState.FirstMatch);
+            MatchManager.SetMatchState(ESMatchState.None);
             Helper.PrintError("[MatchState|Switch2FirstMatch] kick off all players");
+        }
+        else if (MatchManager.MatchState == ESMatchState.MatchEnd)
+        {
+            MatchManager.SetMatchState(ESMatchState.None);
+            Helper.PrintError("[MatchState|MatchEnd]");
+            return true;
         }
         return true;
     }
@@ -168,6 +179,7 @@ public enum ESMatchState
     None,
     FirstMatch,
     SecondMatch,
+    MatchEnd,
 }
 
 public enum ESMatchType
@@ -223,6 +235,7 @@ public class MultiplayerTeamSelectComponentPatch
                     {
                         if (team == Mission.Current.Teams[0])
                         {
+                            Helper.PrintWarning($"[MultiplayerTeamSelectComponentPatch|FirstMatch] {peer.UserName} 选了1队");
                             return true;
                         }
                         else
@@ -231,7 +244,7 @@ public class MultiplayerTeamSelectComponentPatch
                             return false;
                         }
                     }
-                    else if (conWillMatchData.secondTeamPlayerIds.Contains(Helper.GetPlayerId(peer))  )
+                    else if (conWillMatchData.secondTeamPlayerIds.Contains(Helper.GetPlayerId(peer)))
                     {
                         if (team == Mission.Current.Teams[0])
                         {
@@ -240,6 +253,7 @@ public class MultiplayerTeamSelectComponentPatch
                         }
                         else
                         {
+                            Helper.PrintWarning($"[MultiplayerTeamSelectComponentPatch|FirstMatch] {peer.UserName} 选了2队");
                             return true;
                         }
                     }
@@ -253,11 +267,12 @@ public class MultiplayerTeamSelectComponentPatch
                 case ESMatchState.SecondMatch:
                     if (conWillMatchData.firstTeamPlayerIds.Contains(Helper.GetPlayerId(peer)) && team == Mission.Current.Teams[1])
                     {
-
+                        Helper.PrintWarning($"[MultiplayerTeamSelectComponentPatch|SecondMatch] {peer.UserName} 选了2队");
                         return true;
                     }
                     else if (conWillMatchData.secondTeamPlayerIds.Contains(Helper.GetPlayerId(peer)) && team == Mission.Current.Teams[0])
                     {
+                        Helper.PrintWarning($"[MultiplayerTeamSelectComponentPatch|SecondMatch] {peer.UserName} 选了1队");
                         return true;
                     }
                     else
@@ -265,6 +280,7 @@ public class MultiplayerTeamSelectComponentPatch
                         Helper.SendMessageToPeer(peer, "非比赛选手禁止选队伍");
                         return false;
                     }
+
             }
 
 
@@ -318,3 +334,41 @@ public class MultiplayerTeamSelectComponentPatch
         }
     }
 }
+
+[HarmonyPatch(typeof(MultiplayerTeamSelectComponent), "AutoAssignTeam")]
+public class MultiplayerTeamSelectComponentPatchForAutoAssignTeam
+{
+    public static bool Prefix(MultiplayerTeamSelectComponent __instance, NetworkCommunicator peer)
+    {
+        __instance ??= Mission.Current.GetMissionBehavior<MultiplayerTeamSelectComponent>();
+
+        WillMatchData conWillMatchData = BLMMBehavior2.ConWillMatchData;
+        if (conWillMatchData != null && !conWillMatchData.isCancel && !conWillMatchData.isFinished)
+        {
+            if (!conWillMatchData.isplayerNeedMatch(Helper.GetPlayerId(peer)))
+            {
+                __instance.ChangeTeamServer(peer, Mission.Current.SpectatorTeam);
+                Helper.SendMessageToPeer(peer, "非比赛选手禁止选队伍");
+                return false;
+            }
+            else
+            {
+                if (conWillMatchData.isPlayerInFirstTeam(Helper.GetPlayerId(peer)))
+                {
+                    __instance.ChangeTeamServer(peer, Mission.Current.AttackerTeam);
+                }
+                else if (conWillMatchData.isPlayerInSecondTeam(Helper.GetPlayerId(peer)))
+                {
+                    __instance.ChangeTeamServer(peer, Mission.Current.DefenderTeam);
+                }
+                else
+                {
+                    __instance.ChangeTeamServer(peer, Mission.Current.SpectatorTeam);
+                }
+                return false;
+            }
+        }
+        return true;
+    }
+}
+

@@ -2,6 +2,7 @@
 using BLMMX.Entity;
 using BLMMX.Helpers;
 using BLMMX.MatchTable;
+using BLMMX.Patch;
 using BLMMX.util;
 using BLMMX.Util;
 using Newtonsoft.Json;
@@ -26,8 +27,6 @@ internal class BLMMBehavior2 : MultiplayerTeamSelectComponent
     private Timer timerIn5s;
     private static PlayerMatchDataContainer dataContainer;
     private static WillMatchData willMatchData;
-
-    private static int MaxAfterPlayerArrivadedWatingCount = 180;
     private static int AfterPlayerArrivadedWatingCount;
 
     public static WillMatchData GetWillMatchData => willMatchData;
@@ -42,10 +41,10 @@ internal class BLMMBehavior2 : MultiplayerTeamSelectComponent
         willMatchData.isCancel = true;
         willMatchData.cancelReason = reason;
 
-        string server_name = dataContainer.GetServername();
+        MultiplayerOptions.Instance.GetOptionFromOptionType(MultiplayerOptions.OptionType.ServerName).GetValue(out string server_name);
         string match_id = ConWillMatchData.matchId;
         //await ("http://localhost:14725/cancel-match/server_name/match_id");
-        await NetUtil.Get($"/cancel-match/{server_name}/{match_id}", new JsonObject(), (res) =>
+        await NetUtil.Get($"cancel-match/{server_name}/{match_id}", new JsonObject(), (res) =>
         {
             if (res.IsEmpty())
             {
@@ -246,6 +245,7 @@ internal class BLMMBehavior2 : MultiplayerTeamSelectComponent
                 (res) =>
                 {
                     EWebResponse? eWebResponse = JsonConvert.DeserializeObject<EWebResponse>(res);
+                    Helper.PrintWarning(res);
                     if (eWebResponse != null)
                     {
                         if (eWebResponse.code == -1)
@@ -263,7 +263,7 @@ internal class BLMMBehavior2 : MultiplayerTeamSelectComponent
                             }
 
                             willMatchData = willMatch;
-                            Helper.Print($"[es|get-match-obj-info] {willMatch.MatchType}");
+                            Helper.Print($"[es|get-match-obj-info] {willMatch.MatchType} {willMatch.matchId}");
                             Helper.SendMessageToAllPeers("成功读取匹配数据");
                             //Console.WriteLine(willMatch.isCancel);
                             //Console.WriteLine(willMatch.firstTeamCultrue);
@@ -416,11 +416,14 @@ internal class BLMMBehavior2 : MultiplayerTeamSelectComponent
                             string playerId = Helper.GetPlayerId(item);
                             if (ConWillMatchData.firstTeamPlayerIds.Contains(playerId))
                             {
+                                Helper.PrintWarning(Helper.GetPlayerId(item) + item.UserName + "is team 1");
                                 if (!missionScoreboardComponent.Sides[0].Players.Contains(missionPeer))
                                     multiplayerTeamSelectComponent.ChangeTeamServer(item, Mission.Current.AttackerTeam);
+
                             }
                             else if (ConWillMatchData.secondTeamPlayerIds.Contains(playerId))
                             {
+                                Helper.PrintWarning(Helper.GetPlayerId(item) + item.UserName + "is team 2");
                                 if (!missionScoreboardComponent.Sides[1].Players.Contains(missionPeer))
                                     multiplayerTeamSelectComponent.ChangeTeamServer(item, Mission.Current.DefenderTeam);
                             }
@@ -473,10 +476,22 @@ internal class BLMMBehavior2 : MultiplayerTeamSelectComponent
         KickWeirdBodyProperties(networkPeer);
         KickEmptyNames(networkPeer);
 
+        MultiplayerWarmupComponent multiplayerWarmupComponent = Mission.GetMissionBehavior<MultiplayerWarmupComponent>();
+        if (multiplayerWarmupComponent != null && multiplayerWarmupComponent.IsInWarmup)
+        {
+            if (MatchManager.MatchState == ESMatchState.None || MatchManager.MatchState == ESMatchState.MatchEnd)
+            {
+                MatchManager.SetMatchState(ESMatchState.FirstMatch);
+            }
+        }
+
         if (willMatchData == null || willMatchData.isCancel || willMatchData.isFinished)
         {
             return;
         }
+
+        string x = willMatchData.GetPlayerInfo(networkPeer);
+        Helper.SendMessageToAllPeers(x);
 
         //StatisticPlayernumber();
 

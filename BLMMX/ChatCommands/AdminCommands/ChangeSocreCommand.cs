@@ -1,4 +1,5 @@
 ﻿using BLMMX.Helpers;
+using BLMMX.Util;
 using NetworkMessages.FromServer;
 using Newtonsoft.Json;
 using TaleWorlds.MountAndBlade;
@@ -103,6 +104,18 @@ namespace BLMMX.ChatCommands.AdminCommands
                 string message = JsonConvert.SerializeObject(BLMMBehavior2.ConWillMatchData);
                 Helper.SendMessageToPeer(executor, message);
                 Helper.PrintError(message);
+            }
+            else if (args.StartsWith("t8"))
+            {
+                string server_name = BLMMBehavior2.DataContainer.GetServername();
+                var match_id = BLMMBehavior2.ConWillMatchData.matchId;
+                NetUtil.Get($"cancel-match/{server_name}/{match_id}", new System.Text.Json.Nodes.JsonObject(), (res) =>
+               {
+                   Helper.PrintError(res);
+               }, (ex) =>
+               {
+                   Helper.PrintError(ex.Message);
+               });
             }
             return true;
         }
