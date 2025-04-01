@@ -12,6 +12,7 @@ public class WillMatchData
 {
     private List<string> _secondTeamPlayerIds;
     private string _firstTeamCultrue;
+    private string _secondTeamCultrue;
 
     [JsonProperty("create_at")]
     public DateTime CreateAt { get; set; }
@@ -24,6 +25,9 @@ public class WillMatchData
 
     [JsonProperty("second_team_player_ids")]
     public List<string> secondTeamPlayerIds { get => _secondTeamPlayerIds; set { _secondTeamPlayerIds = value; } }
+
+    [JsonProperty("second_team_culture")]
+    public string secondTeamCultrue { get => _secondTeamCultrue; set { _secondTeamCultrue = value; } }
 
     [JsonProperty("match_type")]
     public ESMatchType MatchType { get; set; }

@@ -225,7 +225,7 @@ public class PlayerMatchDataContainer
             {
                 PlayerMultiKillRecord peek_item = d.Peek();
 
-                if ((DateTime.Now - peek_item.killTime).TotalSeconds < 7)
+                if ((DateTime.Now - peek_item.killTime).TotalSeconds < 15)
                 {
                     d.Push(new PlayerMultiKillRecord(dead_player_id, peek_item.multikillcount + 1));
 
@@ -382,7 +382,6 @@ public class PlayerMatchDataContainer
 
     public void AddAttackerSideScores(int score = 1)
     {
-        AttackRound += score;
         foreach (string k in AttackPlayerIds)
         {
             bool v = _players.TryGetValue(k, out PlayerMatchData playerMatchData);
@@ -398,8 +397,6 @@ public class PlayerMatchDataContainer
 
     internal void SetAttackerSideScores(int sideScore)
     {
-        AttackRound = sideScore;
-
         foreach (string k in AttackPlayerIds)
         {
             bool v = _players.TryGetValue(k, out PlayerMatchData playerMatchData);
@@ -414,8 +411,6 @@ public class PlayerMatchDataContainer
 
     public void SetDefenderSideScores(int sideScore)
     {
-        DefendRound = sideScore;
-
         foreach (string k in AttackPlayerIds)
         {
             bool v = _players.TryGetValue(k, out PlayerMatchData playerMatchData);
@@ -429,7 +424,6 @@ public class PlayerMatchDataContainer
 
     public void AddDefenderSideScores(int sideScore)
     {
-        DefendRound += sideScore;
 
         foreach (string k in AttackPlayerIds)
         {

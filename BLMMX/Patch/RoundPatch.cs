@@ -66,14 +66,29 @@ public class RoundPatch
             return;
         }
         BattleSideEnum battleSideEnum = roundController.RoundWinner;
-        if (battleSideEnum == BattleSideEnum.Attacker)
+        if (!RoundManager.is_second_match)
         {
-            BLMMBehavior2.DataContainer.AddAttackWinRoundNum();
+            if (battleSideEnum == BattleSideEnum.Attacker)
+            {
+                BLMMBehavior2.DataContainer.AddAttackWinRoundNum();
+            }
+            else
+            {
+                BLMMBehavior2.DataContainer.AddDefendWinRoundNum();
+            }
         }
         else
         {
-            BLMMBehavior2.DataContainer.AddDefendWinRoundNum();
+            if (battleSideEnum == BattleSideEnum.Attacker)
+            {
+                BLMMBehavior2.DataContainer.AddDefendWinRoundNum();
+            }
+            else
+            {
+                BLMMBehavior2.DataContainer.AddAttackWinRoundNum();
+            }
         }
+
         int attacker_score = missionScoreboardComponent.GetRoundScore(BattleSideEnum.Attacker);
         int defender_score = missionScoreboardComponent.GetRoundScore(BattleSideEnum.Defender);
         if ((attacker_score > 2 || defender_score > 2) && roundController.RoundCount <= 5)

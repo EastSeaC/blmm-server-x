@@ -695,7 +695,7 @@ internal class BLMMBehavior2 : MultiplayerTeamSelectComponent
             if (affectorAgent.IsHuman && affectorAgent.IsPlayerControlled)
             {
                 string affectorPlayerId = Helper.GetPlayerId(affectorAgent);
-                string affectorPlayerName = affectedAgent.Name;
+                string affectorPlayerName = affectorAgent.Name;
                 if (affectorAgent.Team.IsEnemyOf(affectedAgent.Team))
                 {
                     KeyValuePair<bool, int> k = dataContainer.AddKillRecord(affectorPlayerId, affectedPlayerId);

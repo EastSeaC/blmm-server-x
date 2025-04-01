@@ -101,7 +101,7 @@ public class PatchClientChangeTeam
         }
 
         // 换边
-        if (MatchManager.MatchState == ESMatchState.FirstMatch)
+        if (MatchManager.MatchState == ESMatchState.FirstMatch) 
         {
             Helper.Print("[MatchState|Switch2SecondMatch]");
             MatchManager.SetMatchState(ESMatchState.SecondMatch);
@@ -267,12 +267,12 @@ public class MultiplayerTeamSelectComponentPatch
                 case ESMatchState.SecondMatch:
                     if (conWillMatchData.firstTeamPlayerIds.Contains(Helper.GetPlayerId(peer)) && team == Mission.Current.Teams[1])
                     {
-                        Helper.PrintWarning($"[MultiplayerTeamSelectComponentPatch|SecondMatch] {peer.UserName} 选了2队");
+                        Helper.PrintWarning($"[MultiplayerTeamSelectComponentPatch|SecondMatch] {peer.UserName} selected team2");
                         return true;
                     }
                     else if (conWillMatchData.secondTeamPlayerIds.Contains(Helper.GetPlayerId(peer)) && team == Mission.Current.Teams[0])
                     {
-                        Helper.PrintWarning($"[MultiplayerTeamSelectComponentPatch|SecondMatch] {peer.UserName} 选了1队");
+                        Helper.PrintWarning($"[MultiplayerTeamSelectComponentPatch|SecondMatch] {peer.UserName} selected team1");
                         return true;
                     }
                     else
@@ -280,7 +280,6 @@ public class MultiplayerTeamSelectComponentPatch
                         Helper.SendMessageToPeer(peer, "非比赛选手禁止选队伍");
                         return false;
                     }
-
             }
 
 
@@ -329,7 +328,7 @@ public class MultiplayerTeamSelectComponentPatch
             if (!conWillMatchData.isplayerNeedMatch(playerId))
             {
                 __instance.ChangeTeamServer(peer, Mission.Current.SpectatorTeam);
-                Helper.SendMessageToPeer(peer, "非比赛选手禁止选队伍");
+                Helper.SendMessageToPeer(peer, "非比赛选手禁止选队伍-[postfix]");
             }
         }
     }

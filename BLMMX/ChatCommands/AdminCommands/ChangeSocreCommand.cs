@@ -2,6 +2,7 @@
 using BLMMX.Util;
 using NetworkMessages.FromServer;
 using Newtonsoft.Json;
+using TaleWorlds.ModuleManager;
 using TaleWorlds.MountAndBlade;
 
 namespace BLMMX.ChatCommands.AdminCommands
@@ -95,14 +96,23 @@ namespace BLMMX.ChatCommands.AdminCommands
             }
             else if (args.StartsWith("t6"))
             {
-                string message = JsonConvert.SerializeObject(BLMMBehavior2.DataContainer);
-                Helper.SendMessageToPeer(executor, message);
-                Helper.PrintError(message);
+                try
+                {
+                    string message = JsonConvert.SerializeObject(BLMMBehavior2.DataContainer);
+                    //Helper.SendMessageToPeer(executor, message);
+                    Helper.PrintError(message);
+                    File.WriteAllText(ModuleHelper.GetModuleFullPath("BLMMX") + "/DataContainer.json", message);
+                }
+                catch (Exception ex)
+                {
+                    return true;
+                }
+
             }
             else if (args.StartsWith("t7"))
             {
                 string message = JsonConvert.SerializeObject(BLMMBehavior2.ConWillMatchData);
-                Helper.SendMessageToPeer(executor, message);
+                //Helper.SendMessageToPeer(executor, message);
                 Helper.PrintError(message);
             }
             else if (args.StartsWith("t8"))
