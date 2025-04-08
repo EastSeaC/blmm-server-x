@@ -101,7 +101,7 @@ public class PatchClientChangeTeam
         }
 
         // 换边
-        if (MatchManager.MatchState == ESMatchState.FirstMatch) 
+        if (MatchManager.MatchState == ESMatchState.FirstMatch)
         {
             Helper.Print("[MatchState|Switch2SecondMatch]");
             MatchManager.SetMatchState(ESMatchState.SecondMatch);
@@ -350,7 +350,7 @@ public class MultiplayerTeamSelectComponentPatchForAutoAssignTeam
                 Helper.SendMessageToPeer(peer, "非比赛选手禁止选队伍");
                 return false;
             }
-            else
+            else if (MatchManager.MatchState == ESMatchState.FirstMatch)
             {
                 if (conWillMatchData.isPlayerInFirstTeam(Helper.GetPlayerId(peer)))
                 {
@@ -359,6 +359,22 @@ public class MultiplayerTeamSelectComponentPatchForAutoAssignTeam
                 else if (conWillMatchData.isPlayerInSecondTeam(Helper.GetPlayerId(peer)))
                 {
                     __instance.ChangeTeamServer(peer, Mission.Current.DefenderTeam);
+                }
+                else
+                {
+                    __instance.ChangeTeamServer(peer, Mission.Current.SpectatorTeam);
+                }
+                return false;
+            }
+            else if (MatchManager.MatchState == ESMatchState.SecondMatch)
+            {
+                if (conWillMatchData.isPlayerInFirstTeam(Helper.GetPlayerId(peer)))
+                {
+                    __instance.ChangeTeamServer(peer, Mission.Current.DefenderTeam);
+                }
+                else if (conWillMatchData.isPlayerInSecondTeam(Helper.GetPlayerId(peer)))
+                {
+                    __instance.ChangeTeamServer(peer, Mission.Current.AttackerTeam);
                 }
                 else
                 {

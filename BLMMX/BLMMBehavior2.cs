@@ -6,6 +6,7 @@ using BLMMX.Patch;
 using BLMMX.util;
 using BLMMX.Util;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System.ComponentModel.Design;
 using System.Text.Json.Nodes;
 using TaleWorlds.Core;
@@ -459,12 +460,42 @@ internal class BLMMBehavior2 : MultiplayerTeamSelectComponent
     }
 
 
-    public override void OnPlayerConnectedToServer(NetworkCommunicator networkPeer)
+    public override async void OnPlayerConnectedToServer(NetworkCommunicator networkPeer)
     {
         string playerId = networkPeer.VirtualPlayer.Id.ToString();
         //Helper.SendMessageToPeer(networkPeer, playerId);
         Helper.SendMessageToAllPeers($"欢迎 {networkPeer.UserName} 进入服务器");
-        Helper.SendMessageToPeer(networkPeer, "本BLMM服务器由C_urse 赞助，快说感谢大C!");
+
+        //await NetUtil.GetAsync("get-notice", (res) =>
+        //{
+        //    EWebResponse? eWebResponse = JsonConvert.DeserializeObject<EWebResponse>(res);
+        //    if (eWebResponse == null)
+        //    {
+        //    }
+        //    else
+        //    {
+        //        if (eWebResponse.code == 0)
+        //        {
+        //            if(eWebResponse.data!=null)
+        //            {
+        //                JObject keyValuePairs = JObject.Parse(eWebResponse.data.ToString());
+                        
+        //            }
+        //            //Helper.SendMessageToPeer(networkPeer, eWebResponse.Message);
+        //        }
+        //        else
+        //        {
+        //            Helper.SendMessageToPeer(networkPeer, "公告服务器异常，请联系管理员");
+        //        }
+        //    }
+        //},
+        //(e) =>
+        //{
+        //    Helper.PrintError(e.Message);
+        //    Helper.PrintError(e.StackTrace);
+        //    return;
+        //});
+        Helper.SendMessageToPeer(networkPeer, "本BLMM服务器由 骑砍中文站 赞助提供");
 
         dataContainer.AddPlayerWithName(networkPeer);
         //Debug.Print(JsonConvert.SerializeObject(dataContainer));

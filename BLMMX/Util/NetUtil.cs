@@ -8,8 +8,8 @@ namespace BLMMX.Util;
 
 public class NetUtil
 {
-    private static string ServerIP = "110.42.109.140:14725";
-    //private static string ServerIP = "localhost:14725";
+    //private static string ServerIP = "110.42.109.140:14725";
+    private static string ServerIP = "localhost:14725";
 
 
     private static HttpClient sharedClient = new()

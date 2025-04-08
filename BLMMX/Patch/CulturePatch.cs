@@ -5,10 +5,12 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using TaleWorlds.MountAndBlade;
+using TaleWorlds.MountAndBlade.ListedServer;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace BLMMX.Patch
 {
-    [HarmonyPatch(typeof(MultiplayerOptions.MultiplayerOption), nameof(MultiplayerOptions.MultiplayerOption.UpdateValue))]
+    //[HarmonyPatch(typeof(MultiplayerOptions.MultiplayerOption), nameof(MultiplayerOptions.MultiplayerOption.UpdateValue))]
     internal class CulturePatch
     {
         private static bool Prefix(MultiplayerOptions.MultiplayerOption __instance)
@@ -33,6 +35,17 @@ namespace BLMMX.Patch
                 Traverse.Create(__instance).Field("_stringValue").SetValue(culcute);
                 return false;
             }
+            return true;
+        }
+    }
+
+    [HarmonyPatch(typeof(ServerSideIntermissionManager), "StartMissionAux")]
+    public class FactionPatch
+    {
+        private static bool Prefix(ServerSideIntermissionManager __instance)
+        {
+            
+            
             return true;
         }
     }

@@ -111,9 +111,16 @@ namespace BLMMX.ChatCommands.AdminCommands
             }
             else if (args.StartsWith("t7"))
             {
-                string message = JsonConvert.SerializeObject(BLMMBehavior2.ConWillMatchData);
-                //Helper.SendMessageToPeer(executor, message);
-                Helper.PrintError(message);
+                try
+                {
+                    string message = JsonConvert.SerializeObject(BLMMBehavior2.ConWillMatchData);
+                    Helper.PrintError(message);
+                    File.WriteAllText(ModuleHelper.GetModuleFullPath("BLMMX") + "/ConWillMatchData.json", message);
+                }
+                catch (Exception ex)
+                {
+                    return true;
+                }
             }
             else if (args.StartsWith("t8"))
             {
