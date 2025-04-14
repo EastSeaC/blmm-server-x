@@ -32,7 +32,7 @@ internal class BLMMBehavior2 : MultiplayerTeamSelectComponent
 
     public static WillMatchData GetWillMatchData => willMatchData;
 
-    public static async void MarkCurrentMatchCancel(string reason = "auto")
+    public static async void MarkCurrentMatchCancel(string reason = "auto", bool not_send_http = false)
     {
         if (willMatchData == null)
         {
@@ -45,6 +45,10 @@ internal class BLMMBehavior2 : MultiplayerTeamSelectComponent
         MultiplayerOptions.Instance.GetOptionFromOptionType(MultiplayerOptions.OptionType.ServerName).GetValue(out string server_name);
         string match_id = ConWillMatchData.matchId;
         //await ("http://localhost:14725/cancel-match/server_name/match_id");
+        if (not_send_http)
+        {
+            return;
+        }
         await NetUtil.Get($"cancel-match/{server_name}/{match_id}", new JsonObject(), (res) =>
         {
             if (res.IsEmpty())
@@ -295,6 +299,46 @@ internal class BLMMBehavior2 : MultiplayerTeamSelectComponent
 
             }
 
+            // 判断比赛是否取消
+            await NetUtil.GetAsync("is_match_cancel", (res) =>
+            {
+                if (res == null || res.IsEmpty())
+                {
+                    return;
+                }
+
+                EWebResponse? eWebResponse = JsonConvert.DeserializeObject<EWebResponse>(res);
+                if (eWebResponse == null)
+                {
+                    return;
+                }
+                else
+                {
+                    if (eWebResponse.code < 0)
+                    {
+                        return;
+                    }
+
+                    if (eWebResponse.data != null)
+                    {
+                        JObject keyValuePairs = JObject.Parse(eWebResponse.data.ToString());
+                        string match_id = keyValuePairs["match_id"].ToString();
+                        string reason = keyValuePairs["reason"].ToString();
+                        Helper.Print($"[es|is_match_cancel] {match_id} {reason}");
+                        if (willMatchData != null && willMatchData.matchId == match_id)
+                        {
+                            MarkCurrentMatchCancel(reason, true);
+                        }
+                    }
+                }
+
+            }, (e) =>
+            {
+                Helper.PrintError(e.Message);
+                Helper.PrintError(e.StackTrace);
+            });
+
+            // X
             if (!IsRegEvent)
             {
                 MultiplayerRoundController multiplayerRoundController = Mission.GetMissionBehavior<MultiplayerRoundController>();
@@ -335,6 +379,7 @@ internal class BLMMBehavior2 : MultiplayerTeamSelectComponent
                     {
                         return;
                     }
+                    Helper.Print("[es|get-admin-list] " + string.Join(",", adminList)); 
                     AdminManager.admins = adminList;
                 }
             }, (e) =>
@@ -479,7 +524,7 @@ internal class BLMMBehavior2 : MultiplayerTeamSelectComponent
         //            if(eWebResponse.data!=null)
         //            {
         //                JObject keyValuePairs = JObject.Parse(eWebResponse.data.ToString());
-                        
+
         //            }
         //            //Helper.SendMessageToPeer(networkPeer, eWebResponse.Message);
         //        }

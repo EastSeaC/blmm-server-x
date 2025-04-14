@@ -29,6 +29,7 @@ namespace BLMMX.ChatCommands.AdminCommands
                     foreach (string item in mapList)
                     {
                         Helper.PrintError("[es|map] " + item);
+                        Helper.SendMessageToPeer(executor, "[es|map] " + item);
                     }
                     MultiplayerOptions.OptionType.Map.SetValue("mp_skirmish_map_003_skinc", MultiplayerOptions.MultiplayerOptionsAccessMode.CurrentMapOptions);
 
@@ -39,7 +40,7 @@ namespace BLMMX.ChatCommands.AdminCommands
 
                     //ReflectionHelper.InvokeMethod(serverSide, "SetAutomatedBattleState", new object[] { AutomatedBattleState.CountingForNextBattle });
 
-                    MultiplayerIntermissionVotingManager.Instance.IsCultureVoteEnabled = false;
+                    MultiplayerIntermissionVotingManager.Instance.IsCultureVoteEnabled = true;
                     MultiplayerIntermissionVotingManager.Instance.IsMapVoteEnabled = false;
 
                     //serverSide.SetIntermissionCultureVoting(false);
@@ -62,7 +63,7 @@ namespace BLMMX.ChatCommands.AdminCommands
                 else if (args.Equals("22"))
                 {
                     KickHelper.KickList(GameNetwork.NetworkPeers);
-                    MultiplayerOptions.OptionType.Map.SetValue("mp_bnl_vatnborg", MultiplayerOptions.MultiplayerOptionsAccessMode.CurrentMapOptions);
+                    MultiplayerOptions.OptionType.Map.SetValue("mp_bnl_lighthouse", MultiplayerOptions.MultiplayerOptionsAccessMode.CurrentMapOptions);
                     ServerSideIntermissionManager serverSide = ServerSideIntermissionManager.Instance;
                     ReflectionHelper.SetField(serverSide, "_currentAutomatedBattleRemainingTime", 0f);
                     ReflectionHelper.SetField(serverSide, "_passedTimeSinceLastAutomatedBattleStateClientInform", 1f);
@@ -83,9 +84,13 @@ namespace BLMMX.ChatCommands.AdminCommands
                         Helper.PrintError("es|www  ");
                     }
                 }
+                else if (args.Equals("666"))
+                {
+                    Mission.Current.EndMission(); 
+                }
                 else if (args.Equals("2"))
                 {
-                    MultiplayerOptions.OptionType.Map.SetValue("mp_bnl_vatnborg", MultiplayerOptions.MultiplayerOptionsAccessMode.CurrentMapOptions);
+                    MultiplayerOptions.OptionType.Map.SetValue("mp_bnl_lighthouse", MultiplayerOptions.MultiplayerOptionsAccessMode.CurrentMapOptions);
                     MultiplayerOptions.Instance.GetOptionFromOptionType(MultiplayerOptions.OptionType.Map, MultiplayerOptions.MultiplayerOptionsAccessMode.CurrentMapOptions).GetValue(out string text);
                     Helper.PrintError("[es|map] " + text);
                     Helper.SendMessageToPeer(executor, "当前地图为" + text);
@@ -93,6 +98,8 @@ namespace BLMMX.ChatCommands.AdminCommands
                 else if (args.Equals("3"))
                 {
                     ServerSideIntermissionManager serverSide = ServerSideIntermissionManager.Instance;
+                    MultiplayerOptions.OptionType.CultureTeam1.SetValue("khuzait");
+                    MultiplayerOptions.OptionType.CultureTeam1.SetValue("battania");
                     Helper.PrintError($"[es|AutomatedBattleState] {serverSide.AutomatedBattleState}");
                     // 当状态为 Idle 时 会停止
                     serverSide.StartMission();
@@ -110,6 +117,7 @@ namespace BLMMX.ChatCommands.AdminCommands
                     MultiplayerIntermissionVotingManager.Instance.IsCultureVoteEnabled = false;
                     MultiplayerIntermissionVotingManager.Instance.IsMapVoteEnabled = false;
                     Helper.SendMessageToPeer(executor, "地图已保存");
+                    KickHelper.KickList(GameNetwork.NetworkPeers);
                     ReflectionHelper.SetField(serverSide, "_currentTask", null);
                     serverSide.EndMission();
                 }
@@ -140,7 +148,8 @@ namespace BLMMX.ChatCommands.AdminCommands
             Type type = message.GetType();
             if (type == typeof(LoadMission))
             {
-                LoadMission loadMission = message as LoadMission;
+                LoadMission loadMission = (LoadMission)message;
+
                 Helper.PrintError("[es|map_patch|Prefix]" + loadMission.Map);
             }
             return true;

@@ -16,10 +16,8 @@ namespace BLMMX.Patch;
 
 public class PatchClientChangeTeam
 {
-    public static bool IsOpenBLMMMatch = false;
-
-
-    public static Dictionary<NetworkCommunicator, Team> playerTeams = new();
+    //public static bool IsOpenBLMMMatch = false;
+    //public static Dictionary<NetworkCommunicator, Team> playerTeams = new();101
     //public static bool PrefixChangeTeam(MultiplayerTeamSelectComponent __instance, NetworkCommunicator networkPeer, Team team)
     //{
     //    // 允许切旁观
@@ -63,12 +61,19 @@ public class PatchClientChangeTeam
         MissionScoreboardComponent missionScoreboardComponent = Mission.Current.GetMissionBehavior<MissionScoreboardComponent>();
         if (missionScoreboardComponent != null)
         {
-            MissionScoreboardComponent.MissionScoreboardSide missionScoreboardSide_attacker = missionScoreboardComponent.GetSideSafe(BattleSideEnum.Attacker);
-            List<string> attack_player_ids = missionScoreboardSide_attacker.Players.Select(x => x.GetNetworkPeer().VirtualPlayer.Id.ToString()).ToList();
-            MissionScoreboardComponent.MissionScoreboardSide missionScoreboardSide_defender = missionScoreboardComponent.GetSideSafe(BattleSideEnum.Defender);
-            List<string> defend_player_ids = missionScoreboardSide_defender.Players.Select(x => x.GetNetworkPeer().VirtualPlayer.Id.ToString()).ToList();
-            BLMMBehavior2.DataContainer.SetAttackerSidePlayer(defend_player_ids);
-            BLMMBehavior2.DataContainer.SetDefebderSidePlayer(attack_player_ids);
+            if (BLMMBehavior2.ConWillMatchData != null)
+            {
+                BLMMBehavior2.DataContainer.SetAttackerSidePlayer(BLMMBehavior2.ConWillMatchData.firstTeamPlayerIds);
+                BLMMBehavior2.DataContainer.SetDefebderSidePlayer(BLMMBehavior2.ConWillMatchData.secondTeamPlayerIds);
+            }
+            else
+            {
+                MissionScoreboardComponent.MissionScoreboardSide missionScoreboardSide_attacker = missionScoreboardComponent.GetSideSafe(BattleSideEnum.Attacker);
+                List<string> attack_player_ids = missionScoreboardSide_attacker.Players.Select(x => x.GetNetworkPeer().VirtualPlayer.Id.ToString()).ToList();
+                MissionScoreboardComponent.MissionScoreboardSide missionScoreboardSide_defender = missionScoreboardComponent.GetSideSafe(BattleSideEnum.Defender);
+                List<string> defend_player_ids = missionScoreboardSide_defender.Players.Select(x => x.GetNetworkPeer().VirtualPlayer.Id.ToString()).ToList();
+            }
+
             //BLMMBehavior2.DataContainer.SetAttackerSideScores(missionScoreboardSide_attacker.SideScore);
             //BLMMBehavior2.DataContainer.SetDefenderSideScores(missionScoreboardSide_defender.SideScore);
         }
