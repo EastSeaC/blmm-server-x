@@ -90,6 +90,7 @@ public class PatchClientChangeTeam
         Debug.Print(result);
         try
         {
+            // 上传比赛数据
             HttpHelper.PostStringAsync(WebUrlManager.UploadMatchData, result);
             Debug.Print("[es|Sended DataToServer]");
 

@@ -379,7 +379,7 @@ internal class BLMMBehavior2 : MultiplayerTeamSelectComponent
                     {
                         return;
                     }
-                    Helper.Print("[es|get-admin-list] " + string.Join(",", adminList)); 
+                    Helper.Print("[es|get-admin-list] " + string.Join(",", adminList));
                     AdminManager.admins = adminList;
                 }
             }, (e) =>
@@ -406,6 +406,7 @@ internal class BLMMBehavior2 : MultiplayerTeamSelectComponent
             {
                 return;
             }
+
             MultiplayerWarmupComponent multiplayerWarmupComponent = Mission.GetMissionBehavior<MultiplayerWarmupComponent>();
             if (multiplayerWarmupComponent != null && multiplayerWarmupComponent.IsInWarmup && willMatchData.CurrentPlayerNumber > 0)
             {
@@ -450,6 +451,8 @@ internal class BLMMBehavior2 : MultiplayerTeamSelectComponent
                 MissionScoreboardComponent missionScoreboardComponent = Mission.GetMissionBehavior<MissionScoreboardComponent>();
                 if (multiplayerTeamSelectComponent != null && missionScoreboardComponent != null)
                 {
+                    Helper.Print($"[es|OnMissionTick] {DataContainer?.GetAttackRound()}/{DataContainer?.GetDefendRound()} {MatchManager.MatchState} {missionScoreboardComponent.GetRoundScore(BattleSideEnum.Attacker)} {missionScoreboardComponent.GetRoundScore(BattleSideEnum.Defender)}");
+
                     foreach (NetworkCommunicator item in GameNetwork.NetworkPeers)
                     {
                         if (item != null)

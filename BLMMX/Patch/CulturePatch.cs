@@ -12,7 +12,7 @@ using static System.Net.Mime.MediaTypeNames;
 namespace BLMMX.Patch
 {
     //[HarmonyPatch(typeof(MultiplayerOptions.MultiplayerOption), nameof(MultiplayerOptions.MultiplayerOption.UpdateValue))]
-    [HarmonyPatch(typeof(ServerSideIntermissionManager), "SelectRandomCultures")]
+    //[HarmonyPatch(typeof(ServerSideIntermissionManager), "SelectRandomCultures")]
     internal class CulturePatch
     {
         private static bool Prefix(MultiplayerOptions.MultiplayerOption __instance)
@@ -42,7 +42,7 @@ namespace BLMMX.Patch
         }
     }
 
-    [HarmonyPatch(typeof(ServerSideIntermissionManager), "StartMissionAux")]
+    //[HarmonyPatch(typeof(ServerSideIntermissionManager), "StartMissionAux")]
     public class FactionPatch
     {
         private static bool Prefix(ServerSideIntermissionManager __instance)

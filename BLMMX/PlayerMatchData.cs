@@ -36,8 +36,8 @@ public class PlayerMatchDataContainer
 
     private Dictionary<string, Stack<PlayerMultiKillRecord>> _playerMultiKillRepo;
 
-    private int FirstTeamTotalSpawnTimes ;
-    private int SecondTeamTotalSpawnTimes ;
+    private int FirstTeamTotalSpawnTimes;
+    private int SecondTeamTotalSpawnTimes;
 
     public PlayerMatchDataContainer()
     {
@@ -64,7 +64,7 @@ public class PlayerMatchDataContainer
         Console.WriteLine("当前数据");
         foreach (KeyValuePair<string, PlayerMatchData> item in _players)
         {
-            Console.WriteLine($"{item.Value.AttackValue1}|{item.Value.player_id}");
+            Console.WriteLine($"{item.Value.AttackValue}|{item.Value.player_id}");
         }
         Console.WriteLine("***************");
     }
@@ -186,7 +186,7 @@ public class PlayerMatchDataContainer
     {
         AddPlayer(player_id);
         PlayerMatchData playerData = _players[player_id];
-        playerData.AddAttack(Attack);
+        playerData.AddDamage(Attack);
         _players[player_id] = playerData;
 
         //SHOW();
@@ -351,6 +351,16 @@ public class PlayerMatchDataContainer
     public void AddDefendWinBureauNum()
     {
         DefendScores++;
+    }
+
+    public int GetAttackRound()
+    {
+        return AttackRound;
+    }
+
+    public int GetDefendRound()
+    {
+        return DefendRound;
     }
 
     public void AddInfantryTimes(string playerId)
@@ -541,6 +551,13 @@ public class PlayerMatchDataContainer
         return ServerName;
     }
 
+    public enum PlayerTroopType
+    {
+        Infantry = 0,
+        Cavalry = 1,
+        Archer = 2,
+    }
+
     public class PlayerMatchData
     {
         public string player_id;
@@ -563,7 +580,7 @@ public class PlayerMatchDataContainer
         private int cavalry = 0; //  骑兵
         private int archer = 0; //弓兵
 
-        private float AttackValue = 0;
+        private float attackValue = 0;
         private float TKValue = 0;
         private float TKTimes = 0;
 
@@ -578,7 +595,7 @@ public class PlayerMatchDataContainer
 
 
         [JsonProperty("damage")]
-        public float AttackValue1 { get => AttackValue; set => AttackValue = value; }
+        public float AttackValue { get => attackValue; set => attackValue = value; }
         [JsonProperty("team_damage")]
         public float TKValue1 { get => TKValue; set => TKValue = value; }
         [JsonProperty("tk_times")]
@@ -609,6 +626,18 @@ public class PlayerMatchDataContainer
         public bool IsLeaveServer { get; set; } = false;
 
         public int SpawnTimes { get => spawnTimes; set => spawnTimes = value; }
+
+        [JsonIgnore]
+        public static PlayerTroopType playerTroopType;
+
+        [JsonProperty("infantry_damage")]
+        public int infantryDamage;
+
+        [JsonProperty("calvary_damage")]
+        public int calvaryDamage;
+
+        [JsonProperty("archer_damage")]
+        public int archerDamage;
 
         public PlayerMatchData(string PlayerId)
         {
@@ -641,18 +670,23 @@ public class PlayerMatchDataContainer
             cavalry = 0; // 骑兵
             archer = 0; // 弓兵
 
-            AttackValue = 0;
+            attackValue = 0;
             TKValue = 0;
             TKTimes = 0;
 
             AttackHorse = 0;
             TKHorse = 0;
             spawnTimes = 0;
+
+            playerTroopType = PlayerTroopType.Infantry;
+            infantryDamage = 0;
+            calvaryDamage = 0;
+            archerDamage = 0;
         }
 
-        public void AddAttack(float AttackValue1)
+        public void AddDamage(float AttackValue1)
         {
-            this.AttackValue1 += AttackValue1;
+            this.AttackValue += AttackValue1;
         }
 
         public void AddTK(float TKValue1) { this.TKValue1 += TKValue1; }

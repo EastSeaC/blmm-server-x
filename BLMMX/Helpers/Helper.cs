@@ -36,6 +36,20 @@ namespace BLMMX.Helpers
             GameNetwork.EndModuleEventAsServer();
         }
 
+        public static void AdminAnnouncement(NetworkCommunicator networkPeer, string message, bool isBroadcast)
+        {
+            if (networkPeer == null)
+            {
+                GameNetwork.BeginBroadcastModuleEvent();
+                GameNetwork.WriteMessage(new ServerAdminMessage(message, isBroadcast));
+                GameNetwork.EndBroadcastModuleEvent(GameNetwork.EventBroadcastFlags.None, null);
+                return;
+            }
+            GameNetwork.BeginModuleEventAsServer(networkPeer);
+            GameNetwork.WriteMessage(new ServerAdminMessage(message, isBroadcast));
+            GameNetwork.EndModuleEventAsServer();
+        }
+
         public static string GetPlayerId(NetworkCommunicator peer)
         {
             return peer.VirtualPlayer.Id.ToString();

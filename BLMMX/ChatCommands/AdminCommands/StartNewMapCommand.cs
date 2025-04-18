@@ -86,7 +86,7 @@ namespace BLMMX.ChatCommands.AdminCommands
                 }
                 else if (args.Equals("666"))
                 {
-                    Mission.Current.EndMission(); 
+                    Mission.Current.EndMission();
                 }
                 else if (args.Equals("2"))
                 {
@@ -98,8 +98,16 @@ namespace BLMMX.ChatCommands.AdminCommands
                 else if (args.Equals("3"))
                 {
                     ServerSideIntermissionManager serverSide = ServerSideIntermissionManager.Instance;
-                    MultiplayerOptions.OptionType.CultureTeam1.SetValue("khuzait");
-                    MultiplayerOptions.OptionType.CultureTeam1.SetValue("battania");
+                    if (args.Equals("31"))
+                    {
+                        MultiplayerOptions.OptionType.CultureTeam1.SetValue("khuzait");
+                        MultiplayerOptions.OptionType.CultureTeam1.SetValue("battania");
+                    }
+                    else if (args.Equals("32"))
+                    {
+                        MultiplayerOptions.OptionType.CultureTeam1.SetValue("sturgia");
+                        MultiplayerOptions.OptionType.CultureTeam1.SetValue("battania");
+                    }
                     Helper.PrintError($"[es|AutomatedBattleState] {serverSide.AutomatedBattleState}");
                     // 当状态为 Idle 时 会停止
                     serverSide.StartMission();
@@ -140,7 +148,7 @@ namespace BLMMX.ChatCommands.AdminCommands
         public static string MapName;
     }
 
-    [HarmonyPatch(typeof(GameNetwork), nameof(GameNetwork.WriteMessage))]
+    //[HarmonyPatch(typeof(GameNetwork), nameof(GameNetwork.WriteMessage))]
     public class GameNetworkPatch
     {
         static bool Prefix(ref GameNetworkMessage message)
@@ -156,7 +164,7 @@ namespace BLMMX.ChatCommands.AdminCommands
         }
     }
 
-    [HarmonyPatch(typeof(ServerSideIntermissionManager), "SelectMapAndFactions")]
+    //[HarmonyPatch(typeof(ServerSideIntermissionManager), "SelectMapAndFactions")]
     public class ServerSideIntermissionManagerPatch
     {
         static bool Prefix()
@@ -173,28 +181,28 @@ namespace BLMMX.ChatCommands.AdminCommands
         }
     }
 
-    [HarmonyPatch(typeof(ServerSideIntermissionManager), "EndMission")]
-    public class ServerSideIntermissionManagerPatch2
-    {
-        static async void Postfix()
-        {
-            MultiplayerOptions.Instance.GetOptionFromOptionType(MultiplayerOptions.OptionType.Map, MultiplayerOptions.MultiplayerOptionsAccessMode.CurrentMapOptions).GetValue(out string text);
-            Helper.PrintError("[es|SelectRandomMap|postfix]" + text);
-            await Task.Delay(18 * 1000);
+    //[HarmonyPatch(typeof(ServerSideIntermissionManager), "EndMission")]
+    //public class ServerSideIntermissionManagerPatch2
+    //{
+    //    static async void Postfix()
+    //    {
+    //        MultiplayerOptions.Instance.GetOptionFromOptionType(MultiplayerOptions.OptionType.Map, MultiplayerOptions.MultiplayerOptionsAccessMode.CurrentMapOptions).GetValue(out string text);
+    //        Helper.PrintError("[es|SelectRandomMap|postfix]" + text);
+    //        await Task.Delay(18 * 1000);
 
-            ServerSideIntermissionManager instance = ServerSideIntermissionManager.Instance;
-            instance.StartMission();
+    //        ServerSideIntermissionManager instance = ServerSideIntermissionManager.Instance;
+    //        instance.StartMission();
 
-            await Task.Delay(5 * 1000);
-            if (instance.AutomatedBattleState == AutomatedBattleState.Idle)
-            {
-                ReflectionHelper.SetField(instance, "_currentTask", null);
-                instance.StartMission();
-            }
-        }
-    }
+    //        await Task.Delay(5 * 1000);
+    //        if (instance.AutomatedBattleState == AutomatedBattleState.Idle)
+    //        {
+    //            ReflectionHelper.SetField(instance, "_currentTask", null);
+    //            instance.StartMission();
+    //        }
+    //    }
+    //}
 
-    [HarmonyPatch(typeof(MultiplayerOptionsExtensions), nameof(MultiplayerOptionsExtensions.SetValue), new Type[] { typeof(MultiplayerOptions.OptionType), typeof(string), typeof(MultiplayerOptions.MultiplayerOptionsAccessMode) })]
+    //[HarmonyPatch(typeof(MultiplayerOptionsExtensions), nameof(MultiplayerOptionsExtensions.SetValue), new Type[] { typeof(MultiplayerOptions.OptionType), typeof(string), typeof(MultiplayerOptions.MultiplayerOptionsAccessMode) })]
     public class MultiplayerOptionsExtensionsPatch
     {
         public static string newmap_new = "";
@@ -220,6 +228,19 @@ namespace BLMMX.ChatCommands.AdminCommands
                     //Helper.PrintError("[es|MultiplayerOptionsExtensionsPatch|showMapName]" + cur_map_name);
                     return true;
                 }
+            }
+            else if (optionType == MultiplayerOptions.OptionType.CultureTeam2)
+            {
+                Helper.PrintError("[es|MultiplayerOptionsExtensionsPatch|CultureTeam2]" + value);
+                if (value != "vlandia")
+                {
+                    MultiplayerOptions.OptionType.CultureTeam2.SetValue("vlandia");
+                }
+                return false;
+            }
+            else if (optionType == MultiplayerOptions.OptionType.CultureTeam1)
+            {
+                Helper.PrintError("[es|MultiplayerOptionsExtensionsPatch|CultureTeam1]" + value);
             }
             return true;
         }
